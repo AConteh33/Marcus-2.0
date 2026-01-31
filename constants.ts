@@ -1,0 +1,24 @@
+export const translations = {
+  en: {
+    notes: 'Notes',
+    noNotes: 'No notes have been saved yet.',
+    appointments: 'Appointments',
+    noAppointments: 'No appointments have been scheduled.',
+    calendarEvents: 'Calendar Events',
+    noEvents: 'No calendar events have been added.',
+    downloadPdf: 'Download Summary PDF',
+    pdfTitle: 'Echo Assistant Data',
+    languageToggle: 'العربية',
+  },
+  ar: {
+    notes: 'ملاحظات',
+    noNotes: 'لم يتم حفظ أي ملاحظات بعد.',
+    appointments: 'المواعيد',
+    noAppointments: 'لم يتم تحديد أي مواعيد.',
+    calendarEvents: 'أحداث التقويم',
+    noEvents: 'لم تتم إضافة أي أحداث في التقويم.',
+    downloadPdf: 'تنزيل ملخص PDF',
+    pdfTitle: 'بيانات مساعد إيكو',
+    languageToggle: 'English',
+  },
+};

@@ -23,6 +23,8 @@ import { PuppeteerTerminalTool } from './tools/puppeteerTerminalTool';
 import { SystemStatusTool } from './tools/systemStatusTool';
 import { ProductivityTools } from './tools/productivityTools';
 import { PythonExcelTool } from './tools/pythonExcelTool';
+import { MouseControlTool } from './tools/mouseControlTool';
+import { KeyboardControlTool } from './tools/keyboardControlTool';
 // Temporarily comment out old Excel tools that cause build issues
 // import { ExcelTool } from './tools/excelTool';
 // import { EnhancedExcelTool } from './tools/enhancedExcelTool';
@@ -168,6 +170,8 @@ function App() {
     controller.register(new SystemStatusTool());
     controller.register(new ProductivityTools());
     controller.register(new PythonExcelTool());
+    controller.register(new MouseControlTool());
+    controller.register(new KeyboardControlTool());
 
     return controller;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);

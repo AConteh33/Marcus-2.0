@@ -235,3 +235,186 @@ ipcMain.handle('stop-terminal-server', async () => {
 ipcMain.handle('check-terminal-status', async () => {
   return { success: true, status: checkTerminalStatus() };
 });
+
+// Mouse control handlers
+ipcMain.handle('mouse-control', async (event, args: any) => {
+  try {
+    const { action, x, y, button = 'left', scrollDirection = 'down', scrollAmount = 3, duration = 100 } = args;
+    
+    switch (action) {
+      case 'move':
+        if (x !== undefined && y !== undefined) {
+          const script = `
+            tell application "System Events"
+              set frontmost of application process "Marcus" to true
+            end tell
+            tell application "System Events"
+              set {xPos, yPos} to {${x}, ${y}}
+              do shell script "cliclick c:" & xPos & "," & yPos
+            end tell
+          `;
+          await execAppleScript(script);
+          return `Mouse moved to position (${x}, ${y})`;
+        }
+        return 'Missing coordinates for mouse movement';
+        
+      case 'click':
+        const clickScript = `
+          tell application "System Events"
+            set frontmost of application process "Marcus" to true
+          end tell
+          tell application "System Events"
+            do shell script "cliclick c:."
+          end tell
+        `;
+        await execAppleScript(clickScript);
+        return `Mouse ${button} click executed`;
+        
+      case 'doubleClick':
+        const doubleClickScript = `
+          tell application "System Events"
+            set frontmost of application process "Marcus" to true
+          end tell
+          tell application "System Events"
+            do shell script "cliclick dc:."
+          end tell
+        `;
+        await execAppleScript(doubleClickScript);
+        return `Mouse double click executed`;
+        
+      case 'rightClick':
+        const rightClickScript = `
+          tell application "System Events"
+            set frontmost of application process "Marcus" to true
+          end tell
+          tell application "System Events"
+            do shell script "cliclick rc:."
+          end tell
+        `;
+        await execAppleScript(rightClickScript);
+        return `Mouse right click executed`;
+        
+      case 'scroll':
+        const scrollScript = `
+          tell application "System Events"
+            set frontmost of application process "Marcus" to true
+          end tell
+          tell application "System Events"
+            do shell script "cliclick ${scrollDirection === 'up' ? 'wu:' : 'wd:'}${scrollAmount}"
+          end tell
+        `;
+        await execAppleScript(scrollScript);
+        return `Mouse scroll ${scrollDirection} by ${scrollAmount} units`;
+        
+      default:
+        return `Unknown mouse action: ${action}`;
+    }
+  } catch (error) {
+    return `Failed to control mouse: ${error instanceof Error ? error.message : String(error)}`;
+  }
+});
+
+// Keyboard control handlers
+ipcMain.handle('keyboard-control', async (event, args: any) => {
+  try {
+    const { action, text, key, modifier, modifiers, duration = 100 } = args;
+    
+    switch (action) {
+      case 'type':
+        if (text) {
+          const script = `
+            tell application "System Events"
+              set frontmost of application process "Marcus" to true
+            end tell
+            tell application "System Events"
+              keystroke "${text.replace(/"/g, '\\"')}"
+            end tell
+          `;
+          await execAppleScript(script);
+          return `Typed text: "${text}"`;
+        }
+        return 'Missing text for typing action';
+        
+      case 'press':
+        if (key) {
+          const script = `
+            tell application "System Events"
+              set frontmost of application process "Marcus" to true
+            end tell
+            tell application "System Events"
+              keystroke "${key}"
+            end tell
+          `;
+          await execAppleScript(script);
+          return `Pressed key: ${key}`;
+        }
+        return 'Missing key for press action';
+        
+      case 'combo':
+        if (key && modifiers) {
+          const modifierMap: { [key: string]: string } = {
+            'ctrl': 'control down',
+            'alt': 'option down', 
+            'shift': 'shift down',
+            'cmd': 'command down',
+            'meta': 'command down'
+          };
+          
+          const modifierKeys = modifiers.map((mod: string) => modifierMap[mod] || mod).join(', ');
+          const script = `
+            tell application "System Events"
+              set frontmost of application process "Marcus" to true
+            end tell
+            tell application "System Events"
+              ${modifierKeys}
+              keystroke "${key}"
+              ${modifiers.map((mod: string) => `${modifierMap[mod] || mod} up`).join(', ')}
+            end tell
+          `;
+          await execAppleScript(script);
+          return `Pressed key combo: ${modifiers.join('+')}+${key}`;
+        }
+        if (key && modifier) {
+          const modifierMap: { [key: string]: string } = {
+            'ctrl': 'control down',
+            'alt': 'option down',
+            'shift': 'shift down', 
+            'cmd': 'command down',
+            'meta': 'command down'
+          };
+          
+          const script = `
+            tell application "System Events"
+              set frontmost of application process "Marcus" to true
+            end tell
+            tell application "System Events"
+              ${modifierMap[modifier]}
+              keystroke "${key}"
+              ${modifierMap[modifier].replace('down', 'up')}
+            end tell
+          `;
+          await execAppleScript(script);
+          return `Pressed key combo: ${modifier}+${key}`;
+        }
+        return 'Missing key or modifiers for combo action';
+        
+      default:
+        return `Unknown keyboard action: ${action}`;
+    }
+  } catch (error) {
+    return `Failed to control keyboard: ${error instanceof Error ? error.message : String(error)}`;
+  }
+});
+
+// Helper function to execute AppleScript
+function execAppleScript(script: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    exec(`osascript -e '${script.replace(/'/g, "\\'")}'`, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
+}

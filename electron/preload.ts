@@ -23,7 +23,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeAllUpdateListeners: () => {
     ipcRenderer.removeAllListeners('update-status');
-  }
+  },
+  
+  // Mouse and keyboard control
+  mouseControl: (args: any) => ipcRenderer.invoke('mouse-control', args),
+  keyboardControl: (args: any) => ipcRenderer.invoke('keyboard-control', args)
 });
 
 // Type definitions for the exposed API
@@ -40,6 +44,8 @@ declare global {
       getAppVersion: () => Promise<string>;
       onUpdateStatus: (callback: (event: any, data: any) => void) => void;
       removeAllUpdateListeners: () => void;
+      mouseControl: (args: any) => Promise<string>;
+      keyboardControl: (args: any) => Promise<string>;
     };
   }
 }

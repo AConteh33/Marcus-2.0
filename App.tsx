@@ -223,11 +223,10 @@ function App() {
     setCurrentPersonality(personalityId);
     personalityService.setPersonality(personalityId);
     
-    // Show notification that personality will change on next conversation
+    // Log personality change (no popup)
     const personality = personalityService.getAllPersonalities().find(p => p.id === personalityId);
     if (personality) {
       console.log(`🎭 Personality changed to ${personality.name} - will take effect on next conversation`);
-      alert(`Personality changed to ${personality.name} - will take effect on next conversation`);
     }
   };
 

@@ -1,0 +1,7 @@
+{
+  "name": "Dera Tak Demo Assistant",
+  "description": "An AI assistant with real-time voice conversation capabilities. It can save notes, appointments, and calendar events, presented in a dual-language (English/Arabic) interface with a sleek gold and black design.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

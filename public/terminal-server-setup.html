@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcus AI - Terminal Server Setup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #fbbf24;
+        }
+        .code-block {
+            background-color: #1f2937;
+            border: 1px solid #fbbf24/30;
+            color: #fbbf24;
+        }
+        .step-number {
+            background-color: #fbbf24;
+            color: #000000;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-8 text-yellow-400">
+            🚀 Marcus AI - Terminal Server Setup
+        </h1>
+        
+        <div class="bg-black/60 border border-yellow-500/30 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-400">Why You Need This</h2>
+            <p class="text-yellow-100 mb-4">
+                The terminal server enables Marcus AI to execute real terminal commands on your computer. 
+                This provides powerful system integration and file management capabilities.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <div class="text-2xl mb-2">💻</div>
+                    <h3 class="font-semibold text-yellow-400">Terminal Access</h3>
+                    <p class="text-sm text-yellow-100">Execute real commands</p>
+                </div>
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <div class="text-2xl mb-2">📁</div>
+                    <h3 class="font-semibold text-yellow-400">File Management</h3>
+                    <p class="text-sm text-yellow-100">Create, edit, delete files</p>
+                </div>
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <div class="text-2xl mb-2">🔧</div>
+                    <h3 class="font-semibold text-yellow-400">System Control</h3>
+                    <p class="text-sm text-yellow-100">Full system integration</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-black/60 border border-yellow-500/30 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-400">📥 Download Terminal Server</h2>
+            
+            <div class="space-y-4">
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <h3 class="font-semibold text-yellow-400 mb-2">Option 1: Download Server File</h3>
+                    <a href="/terminal-server.cjs" download="terminal-server.cjs" 
+                       class="inline-block bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-500 transition-colors">
+                        📥 Download terminal-server.cjs
+                    </a>
+                    <p class="text-sm text-yellow-100 mt-2">
+                        Download the terminal server file to your computer
+                    </p>
+                </div>
+
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <h3 class="font-semibold text-yellow-400 mb-2">Option 2: Clone Repository</h3>
+                    <div class="code-block rounded p-3 font-mono text-sm">
+                        git clone https://github.com/your-repo/marcus-ai.git<br>
+                        cd marcus-ai
+                    </div>
+                    <p class="text-sm text-yellow-100 mt-2">
+                        Get the full Marcus AI project with all files
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-black/60 border border-yellow-500/30 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-400">⚙️ Setup Instructions</h2>
+            
+            <div class="space-y-6">
+                <div class="flex items-start space-x-4">
+                    <div class="step-number w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+                    <div>
+                        <h3 class="font-semibold text-yellow-400 mb-2">Install Node.js</h3>
+                        <p class="text-yellow-100 mb-2">
+                            Make sure you have Node.js installed on your computer
+                        </p>
+                        <a href="https://nodejs.org" target="_blank" 
+                           class="text-yellow-300 hover:text-yellow-200 underline">
+                            Download Node.js →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="step-number w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+                    <div>
+                        <h3 class="font-semibold text-yellow-400 mb-2">Download Server File</h3>
+                        <p class="text-yellow-100 mb-2">
+                            Download the terminal-server.cjs file using the button above
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="step-number w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+                    <div>
+                        <h3 class="font-semibold text-yellow-400 mb-2">Start the Server</h3>
+                        <p class="text-yellow-100 mb-2">
+                            Open your terminal/command prompt and run:
+                        </p>
+                        <div class="code-block rounded p-3 font-mono text-sm">
+                            node terminal-server.cjs
+                        </div>
+                        <p class="text-yellow-100 mt-2">
+                            You should see: "Terminal server running on port 3001"
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="step-number w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
+                    <div>
+                        <h3 class="font-semibold text-yellow-400 mb-2">Verify Connection</h3>
+                        <p class="text-yellow-100 mb-2">
+                            Test the server is working:
+                        </p>
+                        <div class="code-block rounded p-3 font-mono text-sm">
+                            curl http://localhost:3001/api/health
+                        </div>
+                        <p class="text-yellow-100 mt-2">
+                            Should return: {"status":"Terminal service is running"}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-start space-x-4">
+                    <div class="step-number w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">5</div>
+                    <div>
+                        <h3 class="font-semibold text-yellow-400 mb-2">Return to Marcus AI</h3>
+                        <p class="text-yellow-100 mb-2">
+                            Go back to Marcus AI and try a terminal command!
+                        </p>
+                        <a href="/" 
+                           class="inline-block bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-500 transition-colors">
+                            🚀 Back to Marcus AI
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-black/60 border border-yellow-500/30 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-400">🔧 Troubleshooting</h2>
+            
+            <div class="space-y-4">
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <h3 class="font-semibold text-yellow-400 mb-2">Port Already in Use</h3>
+                    <p class="text-yellow-100 mb-2">
+                        If port 3001 is already in use, you can change it:
+                    </p>
+                    <div class="code-block rounded p-3 font-mono text-sm">
+                        # Kill existing process<br>
+                        pkill -f terminal-server<br><br>
+                        # Or use different port (edit terminal-server.cjs)<br>
+                        const PORT = 3002;
+                    </div>
+                </div>
+
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <h3 class="font-semibold text-yellow-400 mb-2">Permission Denied</h3>
+                    <p class="text-yellow-100 mb-2">
+                        Make sure the file has execute permissions:
+                    </p>
+                    <div class="code-block rounded p-3 font-mono text-sm">
+                        chmod +x terminal-server.cjs
+                    </div>
+                </div>
+
+                <div class="bg-black/40 border border-yellow-500/20 rounded p-4">
+                    <h3 class="font-semibold text-yellow-400 mb-2">Node.js Not Found</h3>
+                    <p class="text-yellow-100 mb-2">
+                        Install Node.js from nodejs.org and restart your terminal
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-black/60 border border-yellow-500/30 rounded-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-yellow-400">🛡️ Security Note</h2>
+            <p class="text-yellow-100">
+                The terminal server runs locally on your computer only. It never sends data to external servers 
+                and provides secure terminal access only to your local Marcus AI instance.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

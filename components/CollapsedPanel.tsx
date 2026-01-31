@@ -25,30 +25,21 @@ export const CollapsedPanel: React.FC<CollapsedPanelProps> = ({
   newItemsCount,
   onExpand,
 }) => {
+  const totalNewItems = newItemsCount.notes + newItemsCount.appointments + newItemsCount.calendarEvents;
+  
   return (
     <div
-      className="w-full h-full flex flex-col items-center justify-start pt-6 space-y-8 cursor-pointer bg-black/90 hover:bg-black/80 transition-colors"
       onClick={onExpand}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onExpand()}
-      aria-label="Expand panel"
+      className="w-full h-full flex items-center justify-center cursor-pointer group"
     >
-      <div className="p-2 text-amber-600">
-          <PanelToggleIcon className="w-7 h-7" isPanelVisible={false} />
+      <div className="relative p-1.5 text-yellow-400 hover:text-yellow-300 rounded-full bg-gray-900/90 hover:bg-yellow-500/20 border border-yellow-500/30 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-200">
+        <PanelToggleIcon className="w-6 h-6" isPanelVisible={false} />
+        {totalNewItems > 0 && (
+          <span className="absolute -top-1 -right-1 block h-5 w-5 transform rounded-full bg-red-600 text-white text-xs font-bold ring-2 ring-black/50 flex items-center justify-center">
+            {totalNewItems > 9 ? '9+' : totalNewItems}
+          </span>
+        )}
       </div>
-      <IconWithBadge
-        icon={<NoteIcon className="w-7 h-7 text-amber-600" />}
-        count={newItemsCount.notes}
-      />
-      <IconWithBadge
-        icon={<AppointmentIcon className="w-7 h-7 text-amber-600" />}
-        count={newItemsCount.appointments}
-      />
-      <IconWithBadge
-        icon={<AppointmentIcon className="w-7 h-7 text-amber-600" />}
-        count={newItemsCount.calendarEvents}
-      />
     </div>
   );
 };

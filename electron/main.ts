@@ -69,10 +69,10 @@ function checkTerminalStatus(): string {
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    width: 1400,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
     webPreferences: {
       preload: join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -81,7 +81,9 @@ function createWindow() {
     },
     icon: join(__dirname, '../public/icon.png'), // Set app icon
     titleBarStyle: 'hiddenInset', // macOS style title bar
-    show: false // Don't show until ready
+    show: false, // Don't show until ready
+    autoHideMenuBar: true, // Hide menu bar
+    backgroundColor: '#000000' // Set background color to match app
   });
 
   console.log('Window created, loading file...');
@@ -96,26 +98,45 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  // Open DevTools automatically for debugging
-  mainWindow.webContents.openDevTools();
+  // Disable DevTools shortcuts and create custom menu
+  const template = [
+    {
+      label: 'Marcus AI',
+      submenu: [
+        {
+          label: 'Quit',
+          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+          click: () => {
+            app.quit();
+          }
+        }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo', label: 'Undo' },
+        { role: 'redo', label: 'Redo' },
+        { type: 'separator' },
+        { role: 'cut', label: 'Cut' },
+        { role: 'copy', label: 'Copy' },
+        { role: 'paste', label: 'Paste' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template as any);
+  Menu.setApplicationMenu(menu);
 
   // Load the app - in development use Vite dev server, in production use built files
   if (process.env.NODE_ENV === 'development') {
     console.log('Loading development URL');
     mainWindow.loadURL('http://localhost:3001');
-    // Open DevTools in development
-    mainWindow.webContents.openDevTools();
   } else {
     console.log('Loading production file');
     const indexPath = join(__dirname, 'index.html');
     console.log('Index path:', indexPath);
     mainWindow.loadFile(indexPath);
-    
-    // Keep DevTools open for debugging blank page issue
-    mainWindow.webContents.on('did-finish-load', () => {
-      // Keep the developer console open for debugging
-      console.log('Page loaded, keeping DevTools open for debugging');
-    });
   }
 }
 

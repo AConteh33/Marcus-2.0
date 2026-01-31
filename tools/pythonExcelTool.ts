@@ -1,10 +1,6 @@
 import type { FunctionDeclaration } from "@google/genai";
 import { Type } from "@google/genai";
-
-interface Tool {
-    getDeclaration(): FunctionDeclaration;
-    execute(args: any): Promise<string>;
-}
+import type { Tool } from './tool';
 
 interface PythonExcelToolArgs {
   action: 'read' | 'write' | 'create' | 'analyze' | 'format' | 'chart';
@@ -19,7 +15,7 @@ interface PythonExcelToolArgs {
   position?: string;
 }
 
-export const PythonExcelTool: Tool = {
+export class PythonExcelTool implements Tool {
   getDeclaration(): FunctionDeclaration {
     return {
       name: 'pythonExcel',
@@ -71,9 +67,10 @@ export const PythonExcelTool: Tool = {
         required: ['action', 'filePath'],
       },
     };
-  },
+  };
 
-  execute: async ({ action, filePath, data, sheetName, range, cell, formatType, chartType, analysisType, position }: PythonExcelToolArgs) => {
+  async execute(args: any): Promise<string> {
+    const { action, filePath, data, sheetName, range, cell, formatType, chartType, analysisType, position }: PythonExcelToolArgs = args;
     try {
       let command = '';
       let pythonScript = '';
@@ -162,5 +159,5 @@ export const PythonExcelTool: Tool = {
         error: error instanceof Error ? error.message : String(error)
       });
     }
-  },
-};
+  }
+}

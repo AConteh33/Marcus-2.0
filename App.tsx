@@ -47,6 +47,10 @@ import { translations } from './constants';
 function App() {
   const [showLandingPage, setShowLandingPage] = useState(false);
   const [currentPersonality, setCurrentPersonality] = useState(personalityService.getCurrentPersonality().id);
+  const [isTtsEnabled, setIsTtsEnabled] = useState(true);
+  const [lang, setLang] = useState<Language>('en');
+  const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [newItemsCount, setNewItemsCount] = useState({ notes: 0, appointments: 0, calendarEvents: 0 });
   
   // Load data from sessionStorage on mount
   const loadSessionData = (): { notes: Note[]; appointments: Appointment[]; calendarEvents: CalendarEvent[] } => {
@@ -70,10 +74,6 @@ function App() {
   const [notes, setNotes] = useState<Note[]>(initialData.notes);
   const [appointments, setAppointments] = useState<Appointment[]>(initialData.appointments);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
-  const [isTtsEnabled, setIsTtsEnabled] = useState(true);
-  const [lang, setLang] = useState<Language>('en');
-  const [isPanelVisible, setIsPanelVisible] = useState(true);
-  const [newItemsCount, setNewItemsCount] = useState({ notes: 0, appointments: 0, calendarEvents: 0 });
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
   const [isElectron, setIsElectron] = useState(false);
 
@@ -85,8 +85,7 @@ function App() {
     try {
       ttsService.current = new GeminiTTSService();
     } catch (error) {
-      console.warn("TTS service unavailable:", error instanceof Error ? error.message : error);
-      setIsTtsEnabled(false);
+      console.error('Failed to initialize TTS service:', error);
     }
   }, []);
   
@@ -99,7 +98,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
 
@@ -126,7 +124,7 @@ function App() {
     }
   }, []);
 
-  // Save data to sessionStorage whenever it changes (auto-cleared on page refresh)
+  // Save data to sessionStorage whenever it changes
   useEffect(() => {
     try {
       const dataToSave = {
@@ -161,25 +159,15 @@ function App() {
     controller.register(new UpdateCalendarEventTool());
     controller.register(new DeleteCalendarEventTool());
     
-    // Other tools
+    // Register core tools - instantiate properly
+    controller.register(new ScreenshotTool());
+    controller.register(new ServerManagementTool());
     controller.register(new EndSessionTool());
     controller.register(new SetLanguagePreferenceTool());
     controller.register(new ElectronTerminalTool());
-    controller.register(new ScreenshotTool());
-    controller.register(new ElectronScreenshotTool());
-    controller.register(new ServerManagementTool());
-    controller.register(new FileSearchTool());
-    controller.register(new EnhancedFileSearchTool());
-    controller.register(new DuckDuckGoSearchTool());
-    controller.register(new PuppeteerTool());
-    controller.register(new PuppeteerTerminalTool());
     controller.register(new SystemStatusTool());
     controller.register(new ProductivityTools());
-    controller.register(PythonExcelTool);
-    // Old Excel tools commented out due to Node.js module build issues
-    // controller.register(ExcelTool);
-    // controller.register(EnhancedExcelTool);
-    // controller.register(ExcelTerminalTool);
+    controller.register(new PythonExcelTool());
 
     return controller;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);
@@ -239,19 +227,18 @@ function App() {
     const personality = personalityService.getAllPersonalities().find(p => p.id === personalityId);
     if (personality) {
       console.log(`🎭 Personality changed to ${personality.name} - will take effect on next conversation`);
-      // You could add a toast notification here if you have one
+      alert(`Personality changed to ${personality.name} - will take effect on next conversation`);
     }
   };
 
-
-      const isDataAvailable = useMemo(() => notes.length > 0 || appointments.length > 0 || calendarEvents.length > 0, [notes, appointments, calendarEvents]);
+  const isDataAvailable = useMemo(() => notes.length > 0 || appointments.length > 0 || calendarEvents.length > 0, [notes, appointments, calendarEvents]);
   
   const isReadyForTextInput = useMemo(() => 
     orbState === 'listening' || 
     orbState === 'idle' || 
     orbState === 'processing' || 
     orbState === 'speaking' ||
-    orbState === 'connecting', 
+    orbState === 'connecting',
     [orbState]
   );
 
@@ -265,11 +252,12 @@ function App() {
   const handleDownloadPdf = () => {
     generatePdf({ notes, appointments, calendarEvents, lang });
   };
-  
+
   const handleLanguageToggle = () => {
     setLang(lang === 'en' ? 'ar' : 'en');
+    alert(`Language changed to ${lang === 'en' ? 'ar' : 'en'}`);
   };
-
+  
   const handleConnect = () => {
     if (orbState === 'disconnected' || orbState === 'idle') {
       soundEffects.playActivate();
@@ -336,7 +324,7 @@ function App() {
 
   if (showLandingPage) {
     return (
-      <div className="bg-black text-gray-100 font-sans antialiased w-full h-screen">
+      <div className="bg-black text-gray-100 font-sans antialiased flex-1 w-full">
         <div className="flex flex-col items-center justify-center h-full p-8">
           <LandingPage onBegin={() => setShowLandingPage(false)} />
         </div>
@@ -346,7 +334,7 @@ function App() {
 
 
   return (
-    <div className="bg-black text-gray-100 font-sans antialiased w-full h-screen grid overflow-hidden">
+    <div className="bg-black text-gray-100 font-sans antialiased flex-1 w-full grid grid-rows-1 overflow-hidden">
       {/* AI Personality Settings - Fixed Top Left */}
       <AIPersonalitySettings
         currentPersonality={currentPersonality}
@@ -357,13 +345,13 @@ function App() {
       <AutoUpdateManager />
         
       {/* Background Layer */}
-      <div className="col-start-1 row-start-1 z-0 w-full h-full">
+      <div className="col-start-1 row-start-1 z-0 w-full h-full min-h-0">
         <BackgroundSciFi />
       </div>
       
       {/* Foreground/Content Layer */}
-      <div className="col-start-1 row-start-1 z-10 w-full h-full bg-black/50 relative md:flex overflow-x-hidden">
-        <main className="flex-grow flex flex-col items-center h-full p-4">
+      <div className="col-start-1 row-start-1 z-10 w-full h-full min-h-0 bg-black/50 relative md:flex overflow-x-hidden">
+        <main className="flex-1 flex flex-col items-center h-full p-4 min-h-0">
 
           <div className="relative flex flex-col items-center justify-center mt-6 mb-4 pt-6 shrink-0">
             <AssistantOrbLiquid
@@ -456,6 +444,13 @@ function App() {
               <PanelToggleIcon className="w-6 h-6" isPanelVisible={false} />
           </button>
         )}
+
+        {/* Version Display - Bottom Left */}
+        <div className="fixed bottom-4 left-4 z-20">
+          <div className="bg-gray-900/90 backdrop-blur-md border border-yellow-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-yellow-400/70 hover:text-yellow-400 transition-colors duration-200">
+            v1.8.2
+          </div>
+        </div>
       </div>
     </div>
   );

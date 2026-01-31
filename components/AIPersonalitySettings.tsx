@@ -38,14 +38,12 @@ interface AIPersonalitySettingsProps {
   currentPersonality: string;
   onPersonalityChange: (personalityId: string) => void;
   className?: string;
-  lang?: string;
 }
 
 export const AIPersonalitySettings: React.FC<AIPersonalitySettingsProps> = ({
   currentPersonality,
   onPersonalityChange,
-  className = '',
-  lang = 'en'
+  className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPersonality, setSelectedPersonality] = useState(currentPersonality);
@@ -59,18 +57,6 @@ export const AIPersonalitySettings: React.FC<AIPersonalitySettingsProps> = ({
     onPersonalityChange(personalityId);
     setIsOpen(false);
     soundEffects.playClick();
-  };
-
-  // Determine positioning based on language direction
-  const getPositionClasses = () => {
-    const isRTL = lang === 'ar';
-    return {
-      button: isRTL ? 'fixed top-8 right-4' : 'fixed top-8 left-4',
-      panel: isRTL ? 'fixed top-20 right-4' : 'fixed top-20 left-4',
-      transform: isRTL 
-        ? (isOpen ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95')
-        : (isOpen ? 'translate-x-0 opacity-100 scale-100' : '-translate-x-full opacity-0 scale-95')
-    };
   };
 
   const getCurrentPersonality = () => {
@@ -111,7 +97,7 @@ export const AIPersonalitySettings: React.FC<AIPersonalitySettingsProps> = ({
           setIsOpen(!isOpen);
           soundEffects.playClick();
         }}
-        className={getPositionClasses().button}
+        className="fixed top-8 left-4 z-40 group"
       >
         <div className={`
           relative p-3 border border-yellow-500/30 rounded-lg backdrop-blur-sm transition-all duration-300
@@ -147,9 +133,9 @@ export const AIPersonalitySettings: React.FC<AIPersonalitySettingsProps> = ({
 
       {/* Settings Panel */}
       <div className={`
-        ${getPositionClasses().panel} z-50 w-80 max-h-[70vh]
+        fixed top-20 left-4 z-50 w-80 max-h-[70vh]
         transform transition-all duration-700 ease-out
-        ${getPositionClasses().transform}
+        ${isOpen ? 'translate-x-0 opacity-100 scale-100' : '-translate-x-full opacity-0 scale-95'}
       `}>
         <div className={`
           relative border border-yellow-500/30 rounded-lg backdrop-blur-sm transition-all duration-300

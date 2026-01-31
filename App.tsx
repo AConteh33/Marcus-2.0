@@ -342,7 +342,6 @@ function App() {
       <AIPersonalitySettings
         currentPersonality={currentPersonality}
         onPersonalityChange={handlePersonalityChange}
-        lang={lang}
       />
       
       {/* Auto-Update Manager */}

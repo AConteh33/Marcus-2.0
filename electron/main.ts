@@ -132,11 +132,16 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     console.log('Loading development URL');
     mainWindow.loadURL('http://localhost:3001');
+    // Open DevTools in development
+    mainWindow.webContents.openDevTools();
   } else {
     console.log('Loading production file');
     const indexPath = join(__dirname, 'index.html');
     console.log('Index path:', indexPath);
     mainWindow.loadFile(indexPath);
+    // Temporarily open DevTools for debugging API key issues
+    mainWindow.webContents.openDevTools();
+    console.log('DevTools opened for debugging');
   }
 }
 

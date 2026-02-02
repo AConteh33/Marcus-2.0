@@ -16,8 +16,9 @@ export class GeminiLiveService implements AIConversationService {
 
     connect(options: AIConnectOptions): void {
         try {
-            // First try connecting without tools to test the model
-            console.log('Testing connection without tools first...');
+            // Connect directly with tools since we've fixed the tool name mismatches
+            console.log('Connecting with tools:', options.config.tools?.length || 0, 'tools');
+            
             this.sessionPromise = (this.ai as any).live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                 callbacks: options.callbacks,
@@ -25,34 +26,32 @@ export class GeminiLiveService implements AIConversationService {
                     responseModalities: ['AUDIO'],
                     inputAudioTranscription: {},
                     outputAudioTranscription: {},
+                    tools: options.config.tools,
                     systemInstruction: options.config.systemInstruction,
                 }
             });
-            console.log('Connected successfully without tools - now trying with tools...');
-            
-            // If that works, try with tools
-            setTimeout(() => {
-                try {
-                    this.sessionPromise = (this.ai as any).live.connect({
-                        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-                        callbacks: options.callbacks,
-                        config: {
-                            responseModalities: ['AUDIO'],
-                            inputAudioTranscription: {},
-                            outputAudioTranscription: {},
-                            tools: options.config.tools,
-                            systemInstruction: options.config.systemInstruction,
-                        }
-                    });
-                } catch (toolsError) {
-                    console.error('Failed to connect with tools:', toolsError);
-                    // Keep the no-tools connection
-                }
-            }, 1000);
+            console.log('Connection initiated with tools');
             
         } catch (error) {
-            console.error('Failed to connect even without tools:', error);
-            throw new Error(`Failed to connect to Gemini API: ${error instanceof Error ? error.message : String(error)}`);
+            console.error('Failed to connect with tools:', error);
+            // Fallback: try without tools for basic functionality
+            try {
+                console.log('Attempting fallback connection without tools...');
+                this.sessionPromise = (this.ai as any).live.connect({
+                    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                    callbacks: options.callbacks,
+                    config: {
+                        responseModalities: ['AUDIO'],
+                        inputAudioTranscription: {},
+                        outputAudioTranscription: {},
+                        systemInstruction: options.config.systemInstruction,
+                    }
+                });
+                console.log('Connected in fallback mode without tools');
+            } catch (fallbackError) {
+                console.error('Fallback connection also failed:', fallbackError);
+                throw new Error(`Failed to connect: With tools: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+            }
         }
     }
 

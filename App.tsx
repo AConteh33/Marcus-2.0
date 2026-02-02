@@ -14,7 +14,6 @@ import { GetNotesTool } from './tools/getNotesTool';
 import { UpdateNoteTool } from './tools/updateNoteTool';
 import { DeleteNoteTool } from './tools/deleteNoteTool';
 import { ElectronTerminalTool } from './tools/electronTerminalTool';
-import { ElectronScreenshotTool } from './tools/electronScreenshotTool';
 import { FileSearchTool } from './tools/fileSearchTool';
 import { EnhancedFileSearchTool } from './tools/enhancedFileSearchTool';
 import { DuckDuckGoSearchTool } from './tools/duckDuckGoSearchTool';

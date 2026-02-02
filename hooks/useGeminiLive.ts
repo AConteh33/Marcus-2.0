@@ -45,7 +45,14 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
         setOrbState('connecting');
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 16000
+                } 
+            });
             microphoneStream.current = stream;
 
             // Fix: Cast window to any to access webkitAudioContext and resolve TypeScript error.
@@ -90,31 +97,32 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                         console.log('Connection opened.');
                         setOrbState('idle');
                         startMicrophoneProcessing();
-                        // Only send greeting if no previous conversation
-                        if (conversationHistory.length === 0) {
-                            setTimeout(() => {
-                                const greeting = "Hello! I'm Marcus, your AI homie. What's good?";
-                                aiService.current?.sendText(greeting);
-                            }, 500);
-                        } else {
-                            // Continue conversation context
-                            setTimeout(() => {
-                                const contextMsg = "I'm back. Let's continue where we left off.";
-                                aiService.current?.sendText(contextMsg);
-                            }, 500);
-                        }
+                        // Don't send automatic messages - wait for user to speak first
                     },
                     onmessage: async (message: LiveServerMessage) => {
                         if (message.serverContent) {
                             // Handle transcriptions
                             if (message.serverContent.inputTranscription) {
+                                // Don't process input if AI is currently speaking (prevent echo)
+                                if (orbStateRef.current === 'speaking') {
+                                    console.log('Ignoring input while AI is speaking to prevent echo');
+                                    return;
+                                }
+                                
+                                // Don't process very short inputs (likely echo/noise)
+                                const inputText = message.serverContent.inputTranscription.text.trim();
+                                if (inputText.length < 2) {
+                                    console.log('Ignoring very short input (likely noise):', inputText);
+                                    return;
+                                }
+                                
                                 setOrbState('listening');
                                 // If user starts speaking, clear any partial AI response.
                                 if (accumulatedOutputRef.current) {
                                     accumulatedOutputRef.current = '';
                                     setCurrentAiTranscript('');
                                 }
-                                accumulatedInputRef.current += message.serverContent.inputTranscription.text;
+                                accumulatedInputRef.current += inputText;
                                 setCurrentUserTranscript(accumulatedInputRef.current);
                             }
                             if (message.serverContent.outputTranscription) {

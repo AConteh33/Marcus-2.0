@@ -193,30 +193,54 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                             
                             for (const fc of message.toolCall.functionCalls) {
                                 addThought?.('executing', `Executing: ${fc.name}`);
-                                const result = await toolController.executeTool(fc.name, fc.args);
+                                try {
+                                    const result = await toolController.executeTool(fc.name, fc.args);
 
-                                // Show tool results in sidebar instead of chat
-                                setActiveToolUsage({
-                                    toolName: fc.name,
-                                    args: fc.args,
-                                    result: result,
-                                    timestamp: new Date()
-                                });
-                                
-                                addThought?.('thinking', `Result: ${result.substring(0, 50)}${result.length > 50 ? '...' : ''}`);
+                                    // Show tool results in sidebar instead of chat
+                                    setActiveToolUsage({
+                                        toolName: fc.name,
+                                        args: fc.args,
+                                        result: result,
+                                        timestamp: new Date()
+                                    });
+                                    
+                                    addThought?.('thinking', `Result: ${result.substring(0, 50)}${result.length > 50 ? '...' : ''}`);
 
-                                if (fc.name === 'endSession') {
-                                    disconnect();
-                                    return;
-                                }
-                                const toolResponse = {
-                                    functionResponses: {
-                                        id: fc.id,
-                                        name: fc.name,
-                                        response: { result: result },
+                                    if (fc.name === 'endSession') {
+                                        disconnect();
+                                        return;
                                     }
-                                };
-                                aiService.current?.sendToolResponse(toolResponse);
+                                    const toolResponse = {
+                                        functionResponses: [{
+                                            id: fc.id,
+                                            name: fc.name,
+                                            response: { result: result },
+                                        }]
+                                    };
+                                    try {
+                                        aiService.current?.sendToolResponse(toolResponse);
+                                    } catch (error) {
+                                        console.error('Error sending tool response:', error);
+                                        addThought?.('thinking', `Tool response error: ${error}`);
+                                    }
+                                } catch (toolError) {
+                                    console.error('Error executing tool:', toolError);
+                                    addThought?.('thinking', `Tool execution error: ${toolError}`);
+                                    
+                                    // Send error response
+                                    const errorResponse = {
+                                        functionResponses: [{
+                                            id: fc.id,
+                                            name: fc.name,
+                                            response: { error: String(toolError) },
+                                        }]
+                                    };
+                                    try {
+                                        aiService.current?.sendToolResponse(errorResponse);
+                                    } catch (responseError) {
+                                        console.error('Error sending error response:', responseError);
+                                    }
+                                }
                             }
                         }
                     },

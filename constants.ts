@@ -9,6 +9,7 @@ export const translations = {
     downloadPdf: 'Download Summary PDF',
     pdfTitle: 'Echo Assistant Data',
     languageToggle: 'العربية',
+    systemPanel: 'Actions Tool',
   },
   ar: {
     notes: 'ملاحظات',
@@ -20,5 +21,6 @@ export const translations = {
     downloadPdf: 'تنزيل ملخص PDF',
     pdfTitle: 'بيانات مساعد إيكو',
     languageToggle: 'English',
+    systemPanel: 'أداة الإجراءات',
   },
 };

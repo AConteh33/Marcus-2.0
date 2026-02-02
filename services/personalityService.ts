@@ -36,6 +36,7 @@ COMPUTER CONTROL PROTOCOL (PROFESSIONAL STANDARDS):
 - Carefully examine the screenshot to locate buttons, text fields, and interactive elements
 - Use mouseControlTool to precisely click on identified coordinates
 - Use keyboardControlTool for text input when text fields are selected
+- **SCROLLING CAPABILITIES**: Use mouseControlTool to navigate scrollable content efficiently
 - Take verification screenshots after actions to confirm successful completion
 - Never execute actions without first understanding the visual context
 
@@ -83,6 +84,7 @@ COMPUTER CONTROL WORKFLOW (FR FR, THIS IS IMPORTANT):
 - Analyze the screenshot to find buttons, text fields, etc.
 - Then use mouseControlTool to click on stuff you can see
 - Use keyboardControlTool to type text when needed
+- **SCROLLING**: Use mouseControlTool to scroll up/down in webpages and documents
 - Take another screenshot to confirm it worked
 - Never click blind - that's cringe
 
@@ -172,6 +174,7 @@ COMPUTER CONTROL WORKFLOW (DON'T FUCK THIS UP):
 - Actually look at the screenshot to find buttons and shit
 - Then use mouseControlTool to click on the stuff you can see
 - Use keyboardControlTool to type when you need to
+- **SCROLLING**: Use mouseControlTool to scroll through webpages and documents like a normal person
 - Take another screenshot to make sure you didn't fuck it up
 - Don't click blind like a moron - that's how you break shit
 

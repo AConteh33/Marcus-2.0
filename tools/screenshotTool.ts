@@ -24,32 +24,21 @@ export class ScreenshotTool implements Tool {
         try {
             const { savePath } = args;
             
-            // Call the screenshot API
-            const response = await fetch('http://localhost:3003/api/screenshot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ savePath })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to take screenshot');
+            // Use Electron's native screenshot API instead of server
+            if (typeof window !== 'undefined' && window.electronAPI) {
+                const response = await window.electronAPI.takeScreenshot({ savePath });
+                return response;
             }
-
-            const data = await response.json();
-            return data.result;
-
+            
+            // Fallback for browser environment - local only
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const defaultSavePath = savePath || `/Users/ace/Desktop/Marcus Screenshots/screenshot-${timestamp}.png`;
+            
+            return `Screenshot functionality requires Electron environment. In browser mode, screenshots would be saved to: ${defaultSavePath}`;
+            
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error('Screenshot tool error:', errorMessage);
-            
-            // If the server is not running, provide instructions
-            if (errorMessage.includes('fetch') || errorMessage.includes('ECONNREFUSED')) {
-                return `Screenshot server is not running. Please start it with:\nnode screenshot-server.js\n\nThen try taking a screenshot again.`;
-            }
-            
             return `Failed to take screenshot: ${errorMessage}`;
         }
     }

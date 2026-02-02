@@ -27,7 +27,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Mouse and keyboard control
   mouseControl: (args: any) => ipcRenderer.invoke('mouse-control', args),
-  keyboardControl: (args: any) => ipcRenderer.invoke('keyboard-control', args)
+  keyboardControl: (args: any) => ipcRenderer.invoke('keyboard-control', args),
+  
+  // Screenshot functionality
+  takeScreenshot: (args: any) => ipcRenderer.invoke('take-screenshot', args)
 });
 
 // Type definitions for the exposed API
@@ -46,6 +49,7 @@ declare global {
       removeAllUpdateListeners: () => void;
       mouseControl: (args: any) => Promise<string>;
       keyboardControl: (args: any) => Promise<string>;
+      takeScreenshot: (args: any) => Promise<string>;
     };
   }
 }

@@ -250,13 +250,7 @@ ipcMain.handle('mouse-control', async (event, args: any) => {
       case 'move':
         if (x !== undefined && y !== undefined) {
           const script = `
-            tell application "System Events"
-              set frontmost of application process "Marcus" to true
-            end tell
-            tell application "System Events"
-              set {xPos, yPos} to {${x}, ${y}}
-              do shell script "cliclick c:" & xPos & "," & yPos
-            end tell
+            do shell script "cliclick m:${x},${y}"
           `;
           await execAppleScript(script);
           return `Mouse moved to position (${x}, ${y})`;
@@ -265,36 +259,21 @@ ipcMain.handle('mouse-control', async (event, args: any) => {
         
       case 'click':
         const clickScript = `
-          tell application "System Events"
-            set frontmost of application process "Marcus" to true
-          end tell
-          tell application "System Events"
-            do shell script "cliclick c:."
-          end tell
+          do shell script "cliclick c:."
         `;
         await execAppleScript(clickScript);
         return `Mouse ${button} click executed`;
         
       case 'doubleClick':
         const doubleClickScript = `
-          tell application "System Events"
-            set frontmost of application process "Marcus" to true
-          end tell
-          tell application "System Events"
-            do shell script "cliclick dc:."
-          end tell
+          do shell script "cliclick dc:."
         `;
         await execAppleScript(doubleClickScript);
         return `Mouse double click executed`;
         
       case 'rightClick':
         const rightClickScript = `
-          tell application "System Events"
-            set frontmost of application process "Marcus" to true
-          end tell
-          tell application "System Events"
-            do shell script "cliclick rc:."
-          end tell
+          do shell script "cliclick rc:."
         `;
         await execAppleScript(rightClickScript);
         return `Mouse right click executed`;
@@ -302,10 +281,9 @@ ipcMain.handle('mouse-control', async (event, args: any) => {
       case 'scroll':
         const scrollScript = `
           tell application "System Events"
-            set frontmost of application process "Marcus" to true
-          end tell
-          tell application "System Events"
-            do shell script "cliclick ${scrollDirection === 'up' ? 'wu:' : 'wd:'}${scrollAmount}"
+            repeat ${scrollAmount} times
+              key code ${scrollDirection === 'up' ? '116' : '121'}
+            end repeat
           end tell
         `;
         await execAppleScript(scrollScript);
@@ -328,12 +306,7 @@ ipcMain.handle('keyboard-control', async (event, args: any) => {
       case 'type':
         if (text) {
           const script = `
-            tell application "System Events"
-              set frontmost of application process "Marcus" to true
-            end tell
-            tell application "System Events"
-              keystroke "${text.replace(/"/g, '\\"')}"
-            end tell
+            do shell script "cliclick t:'${text.replace(/'/g, "\\'")}'"
           `;
           await execAppleScript(script);
           return `Typed text: "${text}"`;
@@ -343,12 +316,7 @@ ipcMain.handle('keyboard-control', async (event, args: any) => {
       case 'press':
         if (key) {
           const script = `
-            tell application "System Events"
-              set frontmost of application process "Marcus" to true
-            end tell
-            tell application "System Events"
-              keystroke "${key}"
-            end tell
+            do shell script "cliclick kp:${key}"
           `;
           await execAppleScript(script);
           return `Pressed key: ${key}`;
@@ -358,45 +326,35 @@ ipcMain.handle('keyboard-control', async (event, args: any) => {
       case 'combo':
         if (key && modifiers) {
           const modifierMap: { [key: string]: string } = {
-            'ctrl': 'control down',
-            'alt': 'option down', 
-            'shift': 'shift down',
-            'cmd': 'command down',
-            'meta': 'command down'
+            'ctrl': 'control',
+            'alt': 'option', 
+            'shift': 'shift',
+            'cmd': 'cmd',
+            'meta': 'cmd'
           };
           
-          const modifierKeys = modifiers.map((mod: string) => modifierMap[mod] || mod).join(', ');
+          const modifierKeys = modifiers.map((mod: string) => modifierMap[mod] || mod).join(',');
           const script = `
-            tell application "System Events"
-              set frontmost of application process "Marcus" to true
-            end tell
-            tell application "System Events"
-              ${modifierKeys}
-              keystroke "${key}"
-              ${modifiers.map((mod: string) => `${modifierMap[mod] || mod} up`).join(', ')}
-            end tell
+            do shell script "cliclick kd:${modifierKeys}"
+            do shell script "cliclick kp:${key}"
+            do shell script "cliclick ku:${modifierKeys}"
           `;
           await execAppleScript(script);
           return `Pressed key combo: ${modifiers.join('+')}+${key}`;
         }
         if (key && modifier) {
           const modifierMap: { [key: string]: string } = {
-            'ctrl': 'control down',
-            'alt': 'option down',
-            'shift': 'shift down', 
-            'cmd': 'command down',
-            'meta': 'command down'
+            'ctrl': 'control',
+            'alt': 'option',
+            'shift': 'shift', 
+            'cmd': 'cmd',
+            'meta': 'cmd'
           };
           
           const script = `
-            tell application "System Events"
-              set frontmost of application process "Marcus" to true
-            end tell
-            tell application "System Events"
-              ${modifierMap[modifier]}
-              keystroke "${key}"
-              ${modifierMap[modifier].replace('down', 'up')}
-            end tell
+            do shell script "cliclick kd:${modifierMap[modifier]}"
+            do shell script "cliclick kp:${key}"
+            do shell script "cliclick ku:${modifierMap[modifier]}"
           `;
           await execAppleScript(script);
           return `Pressed key combo: ${modifier}+${key}`;
@@ -423,3 +381,29 @@ function execAppleScript(script: string): Promise<void> {
     });
   });
 }
+
+// Screenshot handler
+ipcMain.handle('take-screenshot', async (event, args: any) => {
+  try {
+    const { savePath } = args;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const defaultSavePath = savePath || `/Users/ace/Desktop/Marcus Screenshots/screenshot-${timestamp}.png`;
+    
+    // Create directory if it doesn't exist
+    const screenshotDir = '/Users/ace/Desktop/Marcus Screenshots';
+    if (!require('fs').existsSync(screenshotDir)) {
+      require('fs').mkdirSync(screenshotDir, { recursive: true });
+    }
+    
+    // Use macOS screencapture command
+    const script = `
+      do shell script "screencapture -x -t png '${defaultSavePath}'"
+    `;
+    
+    await execAppleScript(script);
+    return `Screenshot saved to: ${defaultSavePath}`;
+    
+  } catch (error) {
+    return `Failed to take screenshot: ${error instanceof Error ? error.message : String(error)}`;
+  }
+});

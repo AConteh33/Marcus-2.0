@@ -191,95 +191,33 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                         if (message.toolCall) {
                             setOrbState('processing');
                             
-                            // Generate and speak what AI is about to do before executing
-                            const toolDescriptions = message.toolCall.functionCalls.map(fc => {
-                                const toolName = fc.name;
-                                const args = fc.args;
+                            for (const fc of message.toolCall.functionCalls) {
+                                addThought?.('executing', `Executing: ${fc.name}`);
+                                const result = await toolController.executeTool(fc.name, fc.args);
+
+                                // Show tool results in sidebar instead of chat
+                                setActiveToolUsage({
+                                    toolName: fc.name,
+                                    args: fc.args,
+                                    result: result,
+                                    timestamp: new Date()
+                                });
                                 
-                                // Create human-readable descriptions for common tools
-                                switch (toolName) {
-                                    case 'screenshotTool':
-                                        return "I'm going to take a screenshot to see what's on your screen";
-                                    case 'mouseControlTool':
-                                        if (args.action === 'move') {
-                                            return `I'm going to move the mouse to position (${args.x}, ${args.y})`;
-                                        } else if (args.action === 'click') {
-                                            return "I'm going to click the mouse";
-                                        } else if (args.action === 'doubleClick') {
-                                            return "I'm going to double-click";
-                                        } else if (args.action === 'rightClick') {
-                                            return "I'm going to right-click";
-                                        } else if (args.action === 'scroll') {
-                                            return `I'm going to scroll ${args.scrollDirection} ${args.scrollAmount} times`;
-                                        }
-                                        return `I'm going to control the mouse: ${args.action}`;
-                                    case 'keyboardControlTool':
-                                        if (args.action === 'type') {
-                                            return `I'm going to type: "${args.text}"`;
-                                        } else if (args.action === 'press') {
-                                            return `I'm going to press the ${args.key} key`;
-                                        } else if (args.action === 'combo') {
-                                            const modifiers = args.modifiers || [args.modifier];
-                                            return `I'm going to press ${Array.isArray(modifiers) ? modifiers.join('+') : modifiers}+${args.key}`;
-                                        }
-                                        return `I'm going to use the keyboard: ${args.action}`;
-                                    case 'saveNoteTool':
-                                        return "I'm going to save a note for you";
-                                    case 'getNotesTool':
-                                        return "I'm going to check your saved notes";
-                                    case 'saveAppointmentTool':
-                                        return "I'm going to schedule an appointment";
-                                    case 'executeTerminalCommand':
-                                        return `I'm going to run the command: ${args.command}`;
-                                    case 'puppeteerTool':
-                                        return "I'm going to automate a web browser task";
-                                    case 'fileSearchTool':
-                                        return `I'm going to search for files: ${args.query}`;
-                                    case 'pythonExcelTool':
-                                        return "I'm going to work with an Excel file";
-                                    default:
-                                        return `I'm going to use the ${toolName} tool`;
+                                addThought?.('thinking', `Result: ${result.substring(0, 50)}${result.length > 50 ? '...' : ''}`);
+
+                                if (fc.name === 'endSession') {
+                                    disconnect();
+                                    return;
                                 }
-                            }).join('. ');
-                            
-                            // Add thought about what AI is doing
-                            addThought?.('planning', `About to execute: ${toolDescriptions}`);
-                            
-                            // Send the description as text so AI speaks it before executing
-                            setTimeout(() => {
-                                aiService.current?.sendText(toolDescriptions);
-                            }, 500);
-                            
-                            // Wait a moment for the speech to start, then execute tools
-                            setTimeout(async () => {
-                                for (const fc of message.toolCall.functionCalls) {
-                                    addThought?.('executing', `Executing: ${fc.name}`);
-                                    const result = await toolController.executeTool(fc.name, fc.args);
-
-                                    // Show tool results in sidebar instead of chat
-                                    setActiveToolUsage({
-                                        toolName: fc.name,
-                                        args: fc.args,
-                                        result: result,
-                                        timestamp: new Date()
-                                    });
-                                    
-                                    addThought?.('thinking', `Result: ${result.substring(0, 50)}${result.length > 50 ? '...' : ''}`);
-
-                                    if (fc.name === 'endSession') {
-                                        disconnect();
-                                        return;
+                                const toolResponse = {
+                                    functionResponses: {
+                                        id: fc.id,
+                                        name: fc.name,
+                                        response: { result: result },
                                     }
-                                    const toolResponse = {
-                                        functionResponses: {
-                                            id: fc.id,
-                                            name: fc.name,
-                                            response: { result: result },
-                                        }
-                                    };
-                                    aiService.current?.sendToolResponse(toolResponse);
-                                }
-                            }, 1500); // Wait 1.5 seconds for speech to start
+                                };
+                                aiService.current?.sendToolResponse(toolResponse);
+                            }
                         }
                     },
                     onerror: (e: ErrorEvent) => {

@@ -281,6 +281,9 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                                 if (!event.reason) {
                                     alert('Connection closed unexpectedly. This may indicate a network issue or authentication problem.');
                                 }
+                            } else if (event.code === 1008) {
+                                // Operation not implemented or supported
+                                alert('Connection closed: Operation not implemented. This may be due to incompatible tool declarations or API configuration. Please check the tool definitions.');
                             } else if (event.reason) {
                                 alert(`Connection closed: ${event.reason}`);
                             }

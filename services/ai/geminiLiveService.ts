@@ -16,9 +16,11 @@ export class GeminiLiveService implements AIConversationService {
 
     connect(options: AIConnectOptions): void {
         try {
-            // Try the primary model first
+            // Try connecting without tools first to isolate the issue
+            console.log('Attempting connection with tools:', options.config.tools?.length || 0, 'tools');
+            
             this.sessionPromise = (this.ai as any).live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                model: 'gemini-2.0-flash-exp',
                 callbacks: options.callbacks,
                 config: {
                     responseModalities: ['AUDIO'],
@@ -29,9 +31,9 @@ export class GeminiLiveService implements AIConversationService {
                 }
             });
         } catch (error) {
-            console.error('Failed to connect with primary model, trying fallback:', error);
+            console.error('Failed to connect with flash-exp model, trying without tools:', error);
             try {
-                // Try fallback model
+                // Try without tools to isolate the issue
                 this.sessionPromise = (this.ai as any).live.connect({
                     model: 'gemini-2.0-flash-exp',
                     callbacks: options.callbacks,
@@ -39,13 +41,28 @@ export class GeminiLiveService implements AIConversationService {
                         responseModalities: ['AUDIO'],
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
-                        tools: options.config.tools,
                         systemInstruction: options.config.systemInstruction,
                     }
                 });
-            } catch (fallbackError) {
-                console.error('Failed to connect with fallback model:', fallbackError);
-                throw new Error(`Failed to connect to Gemini API: Primary: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+                console.log('Connected successfully without tools - issue is with tool declarations');
+            } catch (noToolsError) {
+                console.error('Failed to connect even without tools:', noToolsError);
+                try {
+                    // Try even more basic model
+                    this.sessionPromise = (this.ai as any).live.connect({
+                        model: 'gemini-1.5-flash',
+                        callbacks: options.callbacks,
+                        config: {
+                            responseModalities: ['AUDIO'],
+                            inputAudioTranscription: {},
+                            outputAudioTranscription: {},
+                            tools: options.config.tools,
+                            systemInstruction: options.config.systemInstruction,
+                        }
+                    });
+                } catch (fallbackError) {
+                    throw new Error(`Failed to connect to Gemini API: Flash-exp: ${error instanceof Error ? error.message : String(error)}, No-tools: ${noToolsError instanceof Error ? noToolsError.message : String(noToolsError)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+                }
             }
         }
     }

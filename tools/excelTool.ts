@@ -1,4 +1,6 @@
-import type { Tool } from '../types';
+import type { Tool } from './tool';
+import type { FunctionDeclaration } from "@google/genai";
+import { Type } from "@google/genai";
 
 // Dynamic imports for Node.js modules to avoid browser build issues
 let XLSX: any = null;
@@ -34,53 +36,57 @@ interface ExcelToolArgs {
   outputPath?: string;
 }
 
-export const ExcelTool: Tool = {
-  name: 'excel',
-  description: 'Read, modify, and create Excel files. Can read cells, update values, create new sheets, and analyze data.',
-  parameters: {
-    action: {
-      type: 'string',
-      description: 'Action to perform: read, write, create, update, list-sheets, get-cell, set-cell',
-      required: true,
-    },
-    filePath: {
-      type: 'string',
-      description: 'Path to the Excel file',
-      required: false,
-    },
-    sheetName: {
-      type: 'string',
-      description: 'Name of the sheet to work with',
-      required: false,
-    },
-    data: {
-      type: 'any',
-      description: 'Data to write (for write/create actions)',
-      required: false,
-    },
-    cell: {
-      type: 'string',
-      description: 'Cell reference (e.g., "A1", "B2") for get-cell/set-cell actions',
-      required: false,
-    },
-    value: {
-      type: 'any',
-      description: 'Value to set in a cell for set-cell action',
-      required: false,
-    },
-    range: {
-      type: 'string',
-      description: 'Range to read (e.g., "A1:C10") for read action',
-      required: false,
-    },
-    outputPath: {
-      type: 'string',
-      description: 'Output path for modified Excel file',
-      required: false,
-    },
-  },
-  execute: async ({ action, filePath, sheetName, data, cell, value, range, outputPath }: ExcelToolArgs) => {
+export class ExcelTool implements Tool {
+  getDeclaration(): FunctionDeclaration {
+    return {
+      name: 'excel',
+      description: 'Read, modify, and create Excel files. Can read cells, update values, create new sheets, and analyze data.',
+      parameters: {
+        type: Type.OBJECT,
+        properties: {
+          action: {
+            type: Type.STRING,
+            description: 'Action to perform: read, write, create, update, list-sheets, get-cell, set-cell',
+            enum: ['read', 'write', 'create', 'update', 'list-sheets', 'get-cell', 'set-cell']
+          },
+          filePath: {
+            type: Type.STRING,
+            description: 'Path to the Excel file'
+          },
+          sheetName: {
+            type: Type.STRING,
+            description: 'Name of the sheet to work with'
+          },
+          data: {
+            type: Type.STRING,
+            description: 'JSON data string for write/create operations'
+          },
+          cell: {
+            type: Type.STRING,
+            description: 'Cell reference (e.g., "A1", "B2") for get-cell/set-cell actions'
+          },
+          value: {
+            type: Type.STRING,
+            description: 'Value to set in a cell for set-cell action'
+          },
+          range: {
+            type: Type.STRING,
+            description: 'Range to read (e.g., "A1:C10") for read action'
+          },
+          outputPath: {
+            type: Type.STRING,
+            description: 'Output path for modified Excel file'
+          },
+        },
+        required: ['action']
+      }
+    };
+  }
+
+  async execute(args: ExcelToolArgs): Promise<string> {
     try {
+      const { action, filePath, sheetName, data, cell, value, range, outputPath } = args;
+      
       // Check if Node.js modules are available
       if (!XLSX || !readFile || !writeFile || !existsSync || !join) {
         return JSON.stringify({
@@ -92,27 +98,30 @@ export const ExcelTool: Tool = {
 
       switch (action) {
         case 'read':
-          return await readExcelFile(filePath!, sheetName, range);
+          return JSON.stringify(await readExcelFile(filePath!, sheetName, range));
         case 'create':
-          return await createExcelFile(data!, outputPath!);
+          return JSON.stringify(await createExcelFile(data!, outputPath!));
         case 'write':
-          return await writeExcelFile(filePath!, data!, sheetName, outputPath);
+          return JSON.stringify(await writeExcelFile(filePath!, data!, sheetName, outputPath));
         case 'update':
-          return await updateExcelFile(filePath!, data!, sheetName, outputPath);
+          return JSON.stringify(await updateExcelFile(filePath!, data!, sheetName, outputPath));
         case 'list-sheets':
-          return await listSheets(filePath!);
+          return JSON.stringify(await listSheets(filePath!));
         case 'get-cell':
-          return await getCellValue(filePath!, sheetName!, cell!);
+          return JSON.stringify(await getCellValue(filePath!, sheetName!, cell!));
         case 'set-cell':
-          return await setCellValue(filePath!, sheetName!, cell!, value!, outputPath);
+          return JSON.stringify(await setCellValue(filePath!, sheetName!, cell!, value!, outputPath));
         default:
           throw new Error(`Unknown action: ${action}`);
       }
     } catch (error) {
-      throw new Error(`Excel tool error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return JSON.stringify({
+        success: false,
+        error: `Excel tool error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     }
-  },
-};
+  }
+}
 
 async function readExcelFile(filePath: string, sheetName?: string, range?: string) {
   if (!existsSync(filePath)) {

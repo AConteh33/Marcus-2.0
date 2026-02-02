@@ -19,6 +19,7 @@ export class SystemStatusTool implements Tool {
             description: "Check system status and availability of tools like Puppeteer. Can also install Puppeteer if needed.",
             parameters: {
                 type: Type.OBJECT,
+                description: "Check system status and availability of tools like Puppeteer. Can also install Puppeteer if needed.",
                 properties: {
                     check: {
                         type: Type.STRING,

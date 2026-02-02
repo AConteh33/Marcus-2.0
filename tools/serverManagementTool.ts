@@ -88,7 +88,7 @@ export class ServerManagementTool implements Tool {
         await this.executeCommand(`sleep 2`);
         
         // Start new server
-        const startResult = await this.executeCommand(`cd "/Users/ace/CascadeProjects/Marcus 1.7" && node terminal-server.cjs > /dev/null 2>&1 & echo "Started with PID: $!"`);
+        const startResult = await this.executeCommand(`cd "/Users/ace/CascadeProjects/Marcus 1.9" && node terminal-server.cjs > /dev/null 2>&1 & echo "Started with PID: $!"`);
         
         // Wait and verify
         await this.executeCommand(`sleep 3`);

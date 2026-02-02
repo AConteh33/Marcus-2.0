@@ -6,6 +6,7 @@ export class EndSessionTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'endSession',
+            description: 'Ends the current voice session when the conversation is finished or the user wants to exit.',
             parameters: {
                 type: Type.OBJECT,
                 description: 'Ends the current voice session when the conversation is finished or the user wants to exit.',

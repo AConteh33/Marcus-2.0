@@ -7,6 +7,7 @@ export class SetLanguagePreferenceTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'setLanguagePreference',
+            description: 'Sets the preferred language for communication. Use this when the user explicitly requests to communicate in a specific language.',
             parameters: {
                 type: Type.OBJECT,
                 description: 'Sets the preferred language for communication. Use this when the user explicitly requests to communicate in a specific language.',

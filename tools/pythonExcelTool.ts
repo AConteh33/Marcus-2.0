@@ -123,33 +123,54 @@ export class PythonExcelTool implements Tool {
       }
       
       // Execute the Python script through terminal
-      const { exec } = require('child_process');
-      const { promisify } = require('util');
-      const execAsync = promisify(exec);
-      
-      const { stdout, stderr } = await execAsync(command);
-      
-      if (stderr) {
+      try {
+        // Try Electron API first
+        if (typeof window !== 'undefined' && window.electronAPI) {
+          return await window.electronAPI.executeTerminal(command);
+        }
+        
+        // Fallback to fetch for web environment
+        const response = await fetch('http://localhost:3001/api/terminal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ command }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const { stdout, stderr } = await response.json();
+        
+        if (stderr) {
+          return JSON.stringify({
+            success: false,
+            error: stderr,
+            command: command
+          });
+        }
+        
+        // Parse the JSON result from Python script
+        try {
+          const result = JSON.parse(stdout);
+          return JSON.stringify({
+            success: true,
+            result: result,
+            command: command
+          });
+        } catch (parseError) {
+          return JSON.stringify({
+            success: true,
+            result: stdout,
+            command: command
+          });
+        }
+      } catch (error) {
         return JSON.stringify({
           success: false,
-          error: stderr,
-          command: command
-        });
-      }
-      
-      // Parse the JSON result from Python script
-      try {
-        const result = JSON.parse(stdout);
-        return JSON.stringify({
-          success: true,
-          result: result,
-          command: command
-        });
-      } catch (parseError) {
-        return JSON.stringify({
-          success: true,
-          result: stdout,
-          command: command
+          error: error instanceof Error ? error.message : String(error)
         });
       }
       

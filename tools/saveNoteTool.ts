@@ -15,9 +15,9 @@ export class SaveNoteTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'saveNote',
+            description: 'Saves a note with a title and content to local storage.',
             parameters: {
                 type: Type.OBJECT,
-                description: 'Saves a note with a title and content.',
                 properties: {
                     title: { type: Type.STRING, description: 'The title of the note.' },
                     content: { type: Type.STRING, description: 'The content of the note.' }

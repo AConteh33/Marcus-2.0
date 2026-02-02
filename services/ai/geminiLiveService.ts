@@ -20,7 +20,7 @@ export class GeminiLiveService implements AIConversationService {
             console.log('Attempting connection with tools:', options.config.tools?.length || 0, 'tools');
             
             this.sessionPromise = (this.ai as any).live.connect({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                 callbacks: options.callbacks,
                 config: {
                     responseModalities: ['AUDIO'],
@@ -35,7 +35,7 @@ export class GeminiLiveService implements AIConversationService {
             try {
                 // Try without tools to isolate the issue
                 this.sessionPromise = (this.ai as any).live.connect({
-                    model: 'gemini-1.5-flash',
+                    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                     callbacks: options.callbacks,
                     config: {
                         responseModalities: ['AUDIO'],

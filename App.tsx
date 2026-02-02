@@ -290,9 +290,13 @@ function App() {
     };
   }, []);
 
-  // Trigger TTS when AI finishes speaking
+  // Trigger TTS when AI finishes speaking (only if not using Gemini Live audio)
   useEffect(() => {
-    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle') {
+    // Disable TTS when using Gemini Live since it already provides audio
+    // Check if aiService exists (from useGeminiLive) to determine if Gemini Live is active
+    const isGeminiLiveActive = orbState !== 'disconnected' && orbState !== 'connecting';
+    
+    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle' && !isGeminiLiveActive) {
       const speakAiResponse = async () => {
         try {
           const voiceName = personalityService.getVoiceName();

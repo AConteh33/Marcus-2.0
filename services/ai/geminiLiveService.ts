@@ -1,9 +1,9 @@
-import { GoogleGenAI, LiveSession, Modality, Blob, ToolResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import type { AIConversationService, AIConnectOptions } from './aiService';
 
 
 export class GeminiLiveService implements AIConversationService {
-    private sessionPromise: Promise<LiveSession> | null = null;
+    private sessionPromise: Promise<any> | null = null;
     private ai: GoogleGenAI;
 
     constructor() {
@@ -15,20 +15,42 @@ export class GeminiLiveService implements AIConversationService {
     }
 
     connect(options: AIConnectOptions): void {
-        this.sessionPromise = this.ai.live.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-            callbacks: options.callbacks,
-            config: {
-                responseModalities: [Modality.AUDIO],
-                inputAudioTranscription: {},
-                outputAudioTranscription: {},
-                tools: options.config.tools,
-                systemInstruction: options.config.systemInstruction,
+        try {
+            // Try the primary model first
+            this.sessionPromise = (this.ai as any).live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                callbacks: options.callbacks,
+                config: {
+                    responseModalities: ['AUDIO'],
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    tools: options.config.tools,
+                    systemInstruction: options.config.systemInstruction,
+                }
+            });
+        } catch (error) {
+            console.error('Failed to connect with primary model, trying fallback:', error);
+            try {
+                // Try fallback model
+                this.sessionPromise = (this.ai as any).live.connect({
+                    model: 'gemini-2.0-flash-exp',
+                    callbacks: options.callbacks,
+                    config: {
+                        responseModalities: ['AUDIO'],
+                        inputAudioTranscription: {},
+                        outputAudioTranscription: {},
+                        tools: options.config.tools,
+                        systemInstruction: options.config.systemInstruction,
+                    }
+                });
+            } catch (fallbackError) {
+                console.error('Failed to connect with fallback model:', fallbackError);
+                throw new Error(`Failed to connect to Gemini API: Primary: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
             }
-        });
+        }
     }
 
-    sendAudio(audioBlob: Blob): void {
+    sendAudio(audioBlob: any): void {
         this.sessionPromise?.then(session => {
             session.sendRealtimeInput({ media: audioBlob });
         }).catch(console.error);
@@ -41,7 +63,7 @@ export class GeminiLiveService implements AIConversationService {
         }).catch(console.error);
     }
     
-    sendToolResponse(toolResponse: ToolResponse): void {
+    sendToolResponse(toolResponse: any): void {
         this.sessionPromise?.then(session => {
             session.sendToolResponse(toolResponse);
         }).catch(console.error);

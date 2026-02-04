@@ -16,8 +16,19 @@ export class GeminiLiveService implements AIConversationService {
 
     connect(options: AIConnectOptions): void {
         try {
-            // Connect directly with tools since we've fixed the tool name mismatches
-            console.log('Connecting with tools:', options.config.tools?.length || 0, 'tools');
+            // Comprehensive debugging
+            console.log('=== GEMINI CONNECTION DEBUG START ===');
+            console.log('API Key:', process.env.API_KEY || process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET');
+            console.log('Model: gemini-2.5-flash-native-audio-preview-12-2025');
+            console.log('Tools count:', options.config.tools?.length || 0);
+            console.log('System instruction length:', options.config.systemInstruction?.length || 0);
+            
+            // Log first few tool details for debugging
+            if (options.config.tools && options.config.tools.length > 0) {
+                console.log('First tool sample:', JSON.stringify(options.config.tools[0], null, 2).substring(0, 500) + '...');
+            }
+            
+            console.log('Attempting connection...');
             
             this.sessionPromise = (this.ai as any).live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-12-2025',
@@ -30,27 +41,38 @@ export class GeminiLiveService implements AIConversationService {
                     systemInstruction: options.config.systemInstruction,
                 }
             });
-            console.log('Connection initiated with tools');
+            
+            console.log('Connection promise created successfully');
+            console.log('=== GEMINI CONNECTION DEBUG END ===');
             
         } catch (error) {
-            console.error('Failed to connect with tools:', error);
-            // Fallback: try without tools for basic functionality
+            console.error('=== CONNECTION ERROR DEBUG ===');
+            console.error('Error type:', error.constructor.name);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            console.error('Full error:', error);
+            
+            // Try fallback with debugging
             try {
-                console.log('Attempting fallback connection without tools...');
+                console.log('Trying fallback model...');
                 this.sessionPromise = (this.ai as any).live.connect({
-                    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                    model: 'gemini-1.5-flash',
                     callbacks: options.callbacks,
                     config: {
                         responseModalities: ['AUDIO'],
                         inputAudioTranscription: {},
                         outputAudioTranscription: {},
+                        tools: options.config.tools,
                         systemInstruction: options.config.systemInstruction,
                     }
                 });
-                console.log('Connected in fallback mode without tools');
+                console.log('Fallback connection successful');
             } catch (fallbackError) {
-                console.error('Fallback connection also failed:', fallbackError);
-                throw new Error(`Failed to connect: With tools: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+                console.error('=== FALLBACK ERROR DEBUG ===');
+                console.error('Fallback error type:', fallbackError.constructor.name);
+                console.error('Fallback error message:', fallbackError.message);
+                console.error('Fallback error stack:', fallbackError.stack);
+                throw new Error(`Both models failed. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
             }
         }
     }

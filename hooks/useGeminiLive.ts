@@ -94,7 +94,7 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
             aiService.current.connect({
                 callbacks: {
                     onopen: () => {
-                        console.log('Connection opened.');
+                        console.log('🟢 CONNECTION SUCCESS: Connection opened successfully!');
                         setOrbState('idle');
                         startMicrophoneProcessing();
                         // Don't send automatic messages - wait for user to speak first
@@ -260,7 +260,7 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                         disconnect();
                     },
                     onclose: (event?: CloseEvent) => {
-                        console.log('Connection closed.', event ? {
+                        console.log('🔴 CONNECTION CLOSED: Connection closed.', event ? {
                             code: event.code,
                             reason: event.reason,
                             wasClean: event.wasClean
@@ -272,20 +272,32 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                                 // Quota exceeded or billing issue
                                 const reason = event.reason || '';
                                 if (reason.includes('quota') || reason.includes('billing')) {
+                                    console.log('💳 QUOTA ISSUE: API Quota Exceeded');
                                     alert('API Quota Exceeded: You have exceeded your current Gemini API quota. Please check your plan and billing details at https://aistudio.google.com/apikey');
                                 } else {
+                                    console.log('❌ ERROR 1011:', reason);
                                     alert(`Connection closed: ${reason}`);
                                 }
                             } else if (event.code === 1006) {
                                 // Abnormal closure (could be network or auth issue)
+                                console.log('🔌 NETWORK ISSUE: Abnormal closure - network or auth problem');
                                 if (!event.reason) {
                                     alert('Connection closed unexpectedly. This may indicate a network issue or authentication problem.');
                                 }
                             } else if (event.code === 1008) {
                                 // Operation not implemented or supported
+                                console.log('⚠️ OPERATION NOT IMPLEMENTED: Error 1008 - Operation not implemented, or supported, or enabled');
+                                console.log('🔍 DEBUGGING INFO: This could be due to:');
+                                console.log('   - Tool declaration format issues');
+                                console.log('   - Model compatibility problems');
+                                console.log('   - API key permissions');
+                                console.log('   - Unsupported configuration');
                                 alert('Connection closed: Operation not implemented. This may be due to incompatible tool declarations or API configuration. Please check the tool definitions.');
                             } else if (event.reason) {
+                                console.log(`❌ ERROR ${event.code}:`, event.reason);
                                 alert(`Connection closed: ${event.reason}`);
+                            } else {
+                                console.log(`❌ UNKNOWN ERROR ${event.code}: No reason provided`);
                             }
                         }
                         

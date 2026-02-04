@@ -27,10 +27,12 @@ export class ToolController {
      */
     public register(tool: Tool): void {
         const name = tool.getDeclaration().name;
+        console.log(`🔧 TOOL CONTROLLER: Registering tool "${name}"`);
         if (this.tools.has(name)) {
             console.warn(`Tool with name "${name}" is already registered. Overwriting.`);
         }
         this.tools.set(name, tool);
+        console.log(`🔧 TOOL CONTROLLER: Tool "${name}" registered successfully. Total tools: ${this.tools.size}`);
     }
 
     /**
@@ -38,7 +40,9 @@ export class ToolController {
      * @returns An array of FunctionDeclaration objects.
      */
     public getDeclarations(): FunctionDeclaration[] {
-        return Array.from(this.tools.values()).map(tool => tool.getDeclaration());
+        const declarations = Array.from(this.tools.values()).map(tool => tool.getDeclaration());
+        console.log(`🔧 TOOL CONTROLLER: Returning ${declarations.length} tool declarations:`, declarations.map(d => d.name));
+        return declarations;
     }
 
     /**

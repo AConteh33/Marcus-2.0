@@ -15,6 +15,10 @@ export class GeminiLiveService implements AIConversationService {
     }
 
     connect(options: AIConnectOptions): void {
+        console.log('🔥 GEMINI LIVE SERVICE: connect() called');
+        console.log('🔥 GEMINI LIVE SERVICE: options received:', !!options);
+        console.log('🔥 GEMINI LIVE SERVICE: tools count:', options.config.tools?.length || 0);
+        
         try {
             // Systematic testing to isolate the issue
             console.log('=== GEMINI CONNECTION DEBUG START ===');

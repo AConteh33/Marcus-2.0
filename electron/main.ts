@@ -372,7 +372,9 @@ ipcMain.handle('keyboard-control', async (event, args: any) => {
 // Helper function to execute AppleScript
 function execAppleScript(script: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    exec(`osascript -e '${script.replace(/'/g, "\\'")}'`, (error, stdout, stderr) => {
+    // Properly escape the script for osascript
+    const escapedScript = script.replace(/'/g, "'\\''");
+    exec(`osascript -e '${escapedScript}'`, (error, stdout, stderr) => {
       if (error) {
         reject(error);
       } else {
@@ -409,13 +411,20 @@ ipcMain.handle('take-screenshot', async (event, args: any) => {
     let result: string;
     
     if (platform() === 'darwin') {
-      // macOS: Use screencapture
-      const script = `
-        do shell script "screencapture -x -t png '${defaultSavePath}'"
-      `;
+      // macOS: Use direct screencapture command (simpler and more reliable)
       console.log('🖼️ ELECTRON SCREENSHOT: Executing macOS screenshot');
-      await execAppleScript(script);
-      result = `Screenshot saved to: ${defaultSavePath}`;
+      
+      result = await new Promise<string>((resolve) => {
+        exec(`screencapture -x -t png "${defaultSavePath}"`, (error, stdout, stderr) => {
+          if (error) {
+            console.error('🖼️ ELECTRON SCREENSHOT: screencapture error:', error);
+            resolve(`macOS screenshot failed: ${error.message}`);
+          } else {
+            console.log('🖼️ ELECTRON SCREENSHOT: screencapture succeeded');
+            resolve(`Screenshot saved to: ${defaultSavePath}`);
+          }
+        });
+      });
       
     } else if (platform() === 'win32') {
       // Windows: Use PowerShell

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
 import { join } from 'path';
 import { spawn, exec } from 'child_process';
-import { homedir } from 'os';
+import { homedir, platform } from 'os';
 // Import auto-update service using require for CommonJS compatibility
 const { AutoUpdateService } = require('./autoUpdateService.cjs');
 
@@ -382,28 +382,110 @@ function execAppleScript(script: string): Promise<void> {
   });
 }
 
-// Screenshot handler
+// Cross-platform screenshot handler
 ipcMain.handle('take-screenshot', async (event, args: any) => {
   try {
+    console.log('🖼️ ELECTRON SCREENSHOT: Starting screenshot');
+    console.log('🖼️ ELECTRON SCREENSHOT: Platform:', platform());
+    console.log('🖼️ ELECTRON SCREENSHOT: Args:', args);
+    
     const { savePath } = args;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const defaultSavePath = savePath || `/Users/ace/Desktop/Marcus Screenshots/screenshot-${timestamp}.png`;
+    
+    // Cross-platform paths
+    const userHome = homedir();
+    const desktopDir = join(userHome, 'Desktop');
+    const screenshotDir = join(desktopDir, 'Marcus Screenshots');
+    const defaultSavePath = savePath || join(screenshotDir, `screenshot-${timestamp}.png`);
+    
+    console.log('🖼️ ELECTRON SCREENSHOT: Save path:', defaultSavePath);
     
     // Create directory if it doesn't exist
-    const screenshotDir = '/Users/ace/Desktop/Marcus Screenshots';
     if (!require('fs').existsSync(screenshotDir)) {
+      console.log('🖼️ ELECTRON SCREENSHOT: Creating directory:', screenshotDir);
       require('fs').mkdirSync(screenshotDir, { recursive: true });
     }
     
-    // Use macOS screencapture command
-    const script = `
-      do shell script "screencapture -x -t png '${defaultSavePath}'"
-    `;
+    let result: string;
     
-    await execAppleScript(script);
-    return `Screenshot saved to: ${defaultSavePath}`;
+    if (platform() === 'darwin') {
+      // macOS: Use screencapture
+      const script = `
+        do shell script "screencapture -x -t png '${defaultSavePath}'"
+      `;
+      console.log('🖼️ ELECTRON SCREENSHOT: Executing macOS screenshot');
+      await execAppleScript(script);
+      result = `Screenshot saved to: ${defaultSavePath}`;
+      
+    } else if (platform() === 'win32') {
+      // Windows: Use PowerShell
+      const psScript = `
+        Add-Type -AssemblyName System.Windows.Forms;
+        Add-Type -AssemblyName System.Drawing;
+        [System.Windows.Forms.SendKeys]::SendWait('{PRTSC}');
+        Start-Sleep -Milliseconds 500;
+        if ([System.Windows.Forms.Clipboard]::ContainsImage()) {
+          $img = [System.Windows.Forms.Clipboard]::GetImage();
+          $img.Save('${defaultSavePath}', [System.Drawing.Imaging.ImageFormat]::Png);
+          "Screenshot saved to: ${defaultSavePath}"
+        } else {
+          "Failed: No image in clipboard"
+        }
+      `;
+      
+      console.log('🖼️ ELECTRON SCREENSHOT: Executing Windows screenshot');
+      result = await new Promise<string>((resolve) => {
+        exec(`powershell -Command "${psScript.replace(/"/g, '\\"')}"`, (error, stdout, stderr) => {
+          if (error) {
+            resolve(`Windows screenshot failed: ${error.message}`);
+          } else {
+            resolve(stdout.trim() || stderr.trim() || 'Screenshot completed');
+          }
+        });
+      });
+      
+    } else if (platform() === 'linux') {
+      // Linux: Try multiple screenshot methods
+      console.log('🖼️ ELECTRON SCREENSHOT: Executing Linux screenshot');
+      
+      result = await new Promise<string>((resolve) => {
+        // Try gnome-screenshot first
+        exec(`gnome-screenshot -f "${defaultSavePath}"`, (error, stdout, stderr) => {
+          if (!error) {
+            resolve(`Screenshot saved to: ${defaultSavePath}`);
+            return;
+          }
+          
+          // Try import (ImageMagick)
+          exec(`import -window root "${defaultSavePath}"`, (error2, stdout2, stderr2) => {
+            if (!error2) {
+              resolve(`Screenshot saved to: ${defaultSavePath}`);
+              return;
+            }
+            
+            // Try scrot
+            exec(`scrot "${defaultSavePath}"`, (error3, stdout3, stderr3) => {
+              if (!error3) {
+                resolve(`Screenshot saved to: ${defaultSavePath}`);
+                return;
+              }
+              
+              resolve('Linux screenshot failed: Please install gnome-screenshot, ImageMagick (import), or scrot');
+            });
+          });
+        });
+      });
+      
+    } else {
+      result = `Screenshot not supported on platform: ${platform()}`;
+    }
+    
+    console.log('🖼️ ELECTRON SCREENSHOT: Result:', result);
+    return result;
     
   } catch (error) {
-    return `Failed to take screenshot: ${error instanceof Error ? error.message : String(error)}`;
+    const errorMessage = `Failed to take screenshot: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('🖼️ ELECTRON SCREENSHOT ERROR:', errorMessage);
+    return errorMessage;
   }
 });

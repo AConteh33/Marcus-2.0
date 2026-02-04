@@ -22,23 +22,29 @@ export class ScreenshotTool implements Tool {
 
     async execute(args: { savePath?: string }): Promise<string> {
         try {
+            console.log('🖼️ SCREENSHOT TOOL: Starting screenshot execution');
+            console.log('🖼️ SCREENSHOT TOOL: Args:', args);
+            
             const { savePath } = args;
             
             // Use Electron's native screenshot API instead of server
             if (typeof window !== 'undefined' && window.electronAPI) {
+                console.log('🖼️ SCREENSHOT TOOL: Using Electron API');
                 const response = await window.electronAPI.takeScreenshot({ savePath });
+                console.log('🖼️ SCREENSHOT TOOL: Response:', response);
                 return response;
             }
             
+            console.log('🖼️ SCREENSHOT TOOL: No Electron API available');
             // Fallback for browser environment - local only
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const defaultSavePath = savePath || `/Users/ace/Desktop/Marcus Screenshots/screenshot-${timestamp}.png`;
+            const defaultSavePath = savePath || `~/Desktop/Marcus Screenshots/screenshot-${timestamp}.png`;
             
             return `Screenshot functionality requires Electron environment. In browser mode, screenshots would be saved to: ${defaultSavePath}`;
             
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('Screenshot tool error:', errorMessage);
+            console.error('🖼️ SCREENSHOT TOOL ERROR:', errorMessage);
             return `Failed to take screenshot: ${errorMessage}`;
         }
     }

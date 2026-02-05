@@ -78,7 +78,6 @@ function App() {
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
   const [isElectron, setIsElectron] = useState(false);
   const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
-  const [isAppLoading, setIsAppLoading] = useState(true); // Loading state to prevent black screen
 
   const ttsService = useRef<GeminiTTSService | null>(null);
   const ttsAudioContext = useRef<AudioContext | null>(null);
@@ -93,20 +92,25 @@ function App() {
     }
   }, []);
 
-
-  // Set loading to false after initialization
+  // Add error boundary for debugging
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-      console.log('🚀 App initialization complete');
-    }, 1000);
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 Global error:', event.error);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 Unhandled promise rejection:', event.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
     
     return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
+
 
   const t = useMemo(() => translations[lang], [lang]);
 

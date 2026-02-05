@@ -17,9 +17,9 @@ export class UpdateAppointmentTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'updateAppointment',
+            description: 'Updates an existing appointment. Use this when the user wants to modify, edit, change, or reschedule an appointment they previously saved.',
             parameters: {
                 type: Type.OBJECT,
-                description: 'Updates an existing appointment. Use this when the user wants to modify, edit, change, or reschedule an appointment they previously saved.',
                 properties: {
                     appointmentId: { 
                         type: Type.STRING, 

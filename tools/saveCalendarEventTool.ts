@@ -17,9 +17,9 @@ export class SaveCalendarEventTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'saveCalendarEvent',
+            description: 'Saves a calendar event with a title, date, and time.',
             parameters: {
                 type: Type.OBJECT,
-                description: 'Saves a calendar event with a title, date, and time.',
                 properties: {
                     title: { type: Type.STRING, description: 'The title of the calendar event.' },
                     date: { type: Type.STRING, description: 'The date of the event (e.g., "August 10th, 2024").' },

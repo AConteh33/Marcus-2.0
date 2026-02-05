@@ -78,6 +78,7 @@ function App() {
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
   const [isElectron, setIsElectron] = useState(false);
   const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
+  const [isAppLoading, setIsAppLoading] = useState(true); // Loading state to prevent black screen
 
   const ttsService = useRef<GeminiTTSService | null>(null);
   const ttsAudioContext = useRef<AudioContext | null>(null);
@@ -86,11 +87,41 @@ function App() {
   useEffect(() => {
     try {
       ttsService.current = new GeminiTTSService();
+      console.log('✅ TTS service initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize TTS service:', error);
+      console.error('❌ Failed to initialize TTS service:', error);
     }
   }, []);
-  
+
+  // Add error boundary for debugging
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 Global error:', event.error);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 Unhandled promise rejection:', event.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  // Set loading to false after initialization
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+      console.log('🚀 App initialization complete');
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   const t = useMemo(() => translations[lang], [lang]);
 
   useEffect(() => {
@@ -221,18 +252,8 @@ function App() {
   }, []);
 
   // Conditionally use Gemini Live or TTS-only mode
-  const geminiLiveHook = useGeminiLive ? useGeminiLive(toolController, addThought) : null;
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook || {
-    orbState: 'disconnected',
-    transcripts: [],
-    currentUserTranscript: '',
-    currentAiTranscript: '',
-    connect: () => {},
-    disconnect: () => {},
-    sendText: () => {},
-    activeToolUsage: null,
-    updatePersonality: () => {}
-  };
+  const geminiLiveHook = useGeminiLive(toolController, addThought);
+  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook;
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {
@@ -367,7 +388,16 @@ function App() {
       
       {/* Foreground/Content Layer */}
       <div className="col-start-1 row-start-1 z-10 w-full h-full min-h-0 bg-black/50 relative md:flex overflow-x-hidden">
-        <main className="flex-1 flex flex-col items-center h-full p-4 min-h-0">
+        {/* Loading Screen */}
+        {isAppLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+            <div className="text-yellow-400 text-xl font-mono animate-pulse">
+              🚀 Initializing Marcus...
+            </div>
+          </div>
+        )}
+        
+        <main className={`flex-1 flex flex-col items-center h-full p-4 min-h-0 ${isAppLoading ? 'opacity-50' : ''}`}>
 
           <div className="relative flex flex-col items-center justify-center mt-6 mb-4 pt-6 shrink-0">
             <AssistantOrbLiquid

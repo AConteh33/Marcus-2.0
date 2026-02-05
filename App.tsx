@@ -119,7 +119,11 @@ function App() {
       console.log('🚀 App initialization complete');
     }, 1000);
     
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, []);
 
   const t = useMemo(() => translations[lang], [lang]);

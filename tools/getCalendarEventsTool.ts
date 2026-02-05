@@ -15,9 +15,9 @@ export class GetCalendarEventsTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'getCalendarEvents',
-            description: 'Retrieves all saved calendar events. Use this when the user asks to see their calendar events, check their events, view their events, or list their events.',
             parameters: {
                 type: Type.OBJECT,
+                description: 'Retrieves all saved calendar events. Use this when the user asks to see their calendar events, check their events, view their events, or list their events.',
                 properties: {},
                 required: []
             }

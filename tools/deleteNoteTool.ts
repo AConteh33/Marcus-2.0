@@ -16,9 +16,9 @@ export class DeleteNoteTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'deleteNote',
-            description: 'Deletes a note. Use this when the user wants to remove, delete, or erase a note they previously saved.',
             parameters: {
                 type: Type.OBJECT,
+                description: 'Deletes a note. Use this when the user wants to remove, delete, or erase a note they previously saved.',
                 properties: {
                     noteId: { 
                         type: Type.STRING, 

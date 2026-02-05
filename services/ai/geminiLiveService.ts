@@ -15,30 +15,27 @@ export class GeminiLiveService implements AIConversationService {
     }
 
     connect(options: AIConnectOptions): void {
-        console.log('🔥 GEMINI LIVE SERVICE: connect() called');
-        console.log('🔥 GEMINI LIVE SERVICE: options received:', !!options);
-        console.log('🔥 GEMINI LIVE SERVICE: tools count:', options.config.tools?.length || 0);
-        
         try {
-            // Systematic testing to isolate the issue
+            // Try minimal configuration first to isolate the issue
             console.log('=== GEMINI CONNECTION DEBUG START ===');
             console.log('API Key:', process.env.API_KEY || process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET');
             console.log('Model: gemini-2.5-flash-native-audio-preview-12-2025');
             console.log('Tools count:', options.config.tools?.length || 0);
             console.log('System instruction length:', options.config.systemInstruction?.length || 0);
             
-            // Test 1: Minimal config - just audio
-            console.log('TEST 1: Attempting connection with minimal config (AUDIO only)...');
+            // Try with minimal config first
+            console.log('Attempting connection with minimal config...');
             
             this.sessionPromise = (this.ai as any).live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                 callbacks: options.callbacks,
                 config: {
                     responseModalities: ['AUDIO'],
+                    // Remove potentially problematic config first
                 }
             });
             
-            console.log('TEST 1: Minimal connection initiated');
+            console.log('Minimal connection initiated successfully');
             console.log('=== GEMINI CONNECTION DEBUG END ===');
             
         } catch (error) {
@@ -48,57 +45,22 @@ export class GeminiLiveService implements AIConversationService {
             console.error('Error stack:', error.stack);
             console.error('Full error:', error);
             
-            // Test 2: Try with system instruction only
+            // Try fallback model
             try {
-                console.log('TEST 2: Trying with system instruction only...');
+                console.log('Trying fallback model with minimal config...');
                 this.sessionPromise = (this.ai as any).live.connect({
-                    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+                    model: 'gemini-1.5-flash',
                     callbacks: options.callbacks,
                     config: {
                         responseModalities: ['AUDIO'],
-                        systemInstruction: options.config.systemInstruction,
                     }
                 });
-                console.log('TEST 2: Connection with system instruction successful');
-            } catch (error2) {
-                console.error('TEST 2: System instruction also failed');
-                
-                // Test 3: Try with tools only
-                try {
-                    console.log('TEST 3: Trying with tools only...');
-                    this.sessionPromise = (this.ai as any).live.connect({
-                        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-                        callbacks: options.callbacks,
-                        config: {
-                            responseModalities: ['AUDIO'],
-                            tools: options.config.tools,
-                        }
-                    });
-                    console.log('TEST 3: Connection with tools successful');
-                } catch (error3) {
-                    console.error('TEST 3: Tools also failed');
-                    
-                    // Test 4: Fallback to stable model
-                    try {
-                        console.log('TEST 4: Falling back to gemini-1.5-flash with full config...');
-                        this.sessionPromise = (this.ai as any).live.connect({
-                            model: 'gemini-1.5-flash',
-                            callbacks: options.callbacks,
-                            config: {
-                                responseModalities: ['AUDIO'],
-                                inputAudioTranscription: {},
-                                outputAudioTranscription: {},
-                                tools: options.config.tools,
-                                systemInstruction: options.config.systemInstruction,
-                            }
-                        });
-                        console.log('TEST 4: Fallback model connection successful');
-                    } catch (fallbackError) {
-                        console.error('=== ALL TESTS FAILED ===');
-                        console.error('Fallback error:', fallbackError.message);
-                        throw new Error(`All connection attempts failed. Primary: ${error.message}, SystemInstr: ${error2.message}, Tools: ${error3.message}, Fallback: ${fallbackError.message}`);
-                    }
-                }
+                console.log('Fallback connection successful');
+            } catch (fallbackError) {
+                console.error('=== FALLBACK ERROR DEBUG ===');
+                console.error('Fallback error type:', fallbackError.constructor.name);
+                console.error('Fallback error message:', fallbackError.message);
+                throw new Error(`Both models failed. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
             }
         }
     }

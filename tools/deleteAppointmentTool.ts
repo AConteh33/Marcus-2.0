@@ -17,9 +17,9 @@ export class DeleteAppointmentTool implements Tool {
     getDeclaration(): FunctionDeclaration {
         return {
             name: 'deleteAppointment',
-            description: 'Deletes an appointment. Use this when the user wants to remove, delete, cancel, or erase an appointment they previously saved.',
             parameters: {
                 type: Type.OBJECT,
+                description: 'Deletes an appointment. Use this when the user wants to remove, delete, cancel, or erase an appointment they previously saved.',
                 properties: {
                     appointmentId: { 
                         type: Type.STRING, 

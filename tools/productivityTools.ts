@@ -51,6 +51,7 @@ export class ProductivityTools implements Tool {
             description: "Productivity suite for Google Meet creation, notes management, alarm scheduling, and Marcus app automation. Create meetings, manage desktop notes, set alarms with auto-start, and control Marcus application.",
             parameters: {
                 type: Type.OBJECT,
+                description: "Productivity suite for Google Meet creation, notes management, alarm scheduling, and Marcus app automation. Create meetings, manage desktop notes, set alarms with auto-start, and control Marcus application.",
                 properties: {
                     action: {
                         type: Type.STRING,

@@ -16,8 +16,7 @@ export class SaveCalendarEventTool implements Tool {
     getDeclaration() {
         return {
             name: 'saveCalendarEvent',
-            description: 'Save calendar event locally',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Save calendar event', properties: {}, required: [] }
         };
     }
 
@@ -36,8 +35,7 @@ export class GetCalendarEventsTool implements Tool {
     getDeclaration() {
         return {
             name: 'getCalendarEvents',
-            description: 'Get calendar events from local storage',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Get calendar events', properties: {}, required: [] }
         };
     }
 
@@ -56,8 +54,7 @@ export class UpdateCalendarEventTool implements Tool {
     getDeclaration() {
         return {
             name: 'updateCalendarEvent',
-            description: 'Update calendar event locally',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Update calendar event', properties: {}, required: [] }
         };
     }
 
@@ -76,8 +73,7 @@ export class DeleteCalendarEventTool implements Tool {
     getDeclaration() {
         return {
             name: 'deleteCalendarEvent',
-            description: 'Delete calendar event from local storage',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Delete calendar event', properties: {}, required: [] }
         };
     }
 
@@ -97,8 +93,7 @@ export class GetAppointmentsTool implements Tool {
     getDeclaration() {
         return {
             name: 'getAppointments',
-            description: 'Get appointments from local storage',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Get appointments', properties: {}, required: [] }
         };
     }
 
@@ -117,8 +112,7 @@ export class UpdateAppointmentTool implements Tool {
     getDeclaration() {
         return {
             name: 'updateAppointment',
-            description: 'Update appointment locally',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Update appointment', properties: {}, required: [] }
         };
     }
 
@@ -137,8 +131,7 @@ export class DeleteAppointmentTool implements Tool {
     getDeclaration() {
         return {
             name: 'deleteAppointment',
-            description: 'Delete appointment from local storage',
-            parameters: { type: Type.OBJECT, properties: {}, required: [] }
+            parameters: { type: Type.OBJECT, description: 'Delete appointment', properties: {}, required: [] }
         };
     }
 

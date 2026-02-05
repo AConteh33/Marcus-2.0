@@ -46,7 +46,7 @@ import { soundEffects } from './services/sound/soundEffects';
 import { translations } from './constants';
 
 function App() {
-  const [showLandingPage, setShowLandingPage] = useState(false);// FORCED TO FALSE TO AVOID BLANK SCREEN
+  const [showLandingPage, setShowLandingPage] = useState(false);
   const [currentPersonality, setCurrentPersonality] = useState(personalityService.getCurrentPersonality().id);
   const [isTtsEnabled, setIsTtsEnabled] = useState(true);
   const [lang, setLang] = useState<Language>('en');
@@ -76,7 +76,7 @@ function App() {
   const [appointments, setAppointments] = useState<Appointment[]>(initialData.appointments);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
-  const [isElectron, setIsElectron] = useState(false);// FORCED TO FALSE TO AVOID BLANK SCREEN
+  const [isElectron, setIsElectron] = useState(false);
   const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
   const [isAppLoading, setIsAppLoading] = useState(true); // Loading state to prevent black screen
 
@@ -93,7 +93,38 @@ function App() {
     }
   }, []);
 
+  // Add error boundary for debugging
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 Global error:', event.error);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 Unhandled promise rejection:', event.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
+  // Set loading to false after initialization
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+      console.log('🚀 App initialization complete');
+    }, 1000);
+    
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
 
   const t = useMemo(() => translations[lang], [lang]);
 
@@ -180,28 +211,6 @@ function App() {
     return controller;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);
 
-  // Check system status on app startup
-  useEffect(() => {
-    const checkSystemOnStartup = async () => {
-      try {
-        const systemStatus = new (await import('./tools/systemStatusTool')).SystemStatusTool();
-        const status = await systemStatus.execute({ check: 'puppeteer' });
-        
-        // If Puppeteer is not available, automatically try to install it
-        if (status.includes('Not installed')) {
-          console.log('🔧 Puppeteer not available - attempting automatic installation...');
-          const installResult = await systemStatus.execute({ check: 'install-puppeteer' });
-          console.log('📦 Puppeteer installation result:', installResult);
-        } else {
-          console.log('✅ Puppeteer is already available');
-        }
-      } catch (error) {
-        console.log('System check completed');
-      }
-    };
-
-    checkSystemOnStartup();
-  }, []);
 
   const addThought = useCallback((type: ThoughtProcess['type'], content: string, step?: number, totalSteps?: number) => {
     const newThought: ThoughtProcess = {

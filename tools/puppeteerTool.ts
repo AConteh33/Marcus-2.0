@@ -12,24 +12,10 @@ interface PuppeteerArgs {
 }
 
 export class PuppeteerTool implements Tool {
-    private async executeCommand(command: string): Promise<string> {
-        try {
-            // Try Electron API first (same as productivityTools)
-            if (typeof window !== 'undefined' && window.electronAPI) {
-                return await window.electronAPI.executeTerminal(command);
-            }
-            
-            // Fallback for browser environment
-            return `Puppeteer command requires Electron environment: ${command}`;
-        } catch (error) {
-            return `Failed to execute Puppeteer command: ${error instanceof Error ? error.message : String(error)}`;
-        }
-    }
-
     getDeclaration(): FunctionDeclaration {
         return {
             name: "puppeteer",
-            description: "Automate web browser operations for RESEARCH ONLY - navigate websites, take screenshots, extract data, and gather research information",
+            description: "Automate web browser operations using Puppeteer - navigate websites, take screenshots, click elements, fill forms, extract data, and perform web scraping",
             parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -70,101 +56,35 @@ export class PuppeteerTool implements Tool {
 
     async execute(args: PuppeteerArgs): Promise<string> {
         try {
-            const { url, action, selector, text, waitTime, script, outputPath } = args;
+            const response = await fetch('http://localhost:3002/puppeteer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(args)
+            });
 
-            switch (action) {
-                case 'goto':
-                    if (!url) return 'Error: URL required for goto action';
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.goto('${url}');
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'screenshot':
-                    const screenshotPath = outputPath || 'screenshot.png';
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.screenshot({path: '${screenshotPath}', fullPage: true});
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'click':
-                    if (!selector) return 'Error: Selector required for click action';
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.goto('about:blank');
-                            await page.waitForSelector('${selector}');
-                            await page.click('${selector}');
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'type':
-                    if (!selector || !text) return 'Error: Selector and text required for type action';
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.goto('about:blank');
-                            await page.waitForSelector('${selector}');
-                            await page.type('${selector}', '${text}');
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'scroll':
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.goto('about:blank');
-                            await page.evaluate(() => window.scrollBy(0, 200));
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'wait':
-                    const time = waitTime || 1000;
-                    return await this.executeCommand(`sleep ${time}`);
-
-                case 'evaluate':
-                    if (!script) return 'Error: Script required for evaluate action';
-                    return await this.executeCommand(`cd /Users/ace/CascadeProjects\\ Marcus\\ 1.9 && node -e "
-                        const puppeteer = require('puppeteer');
-                        (async () => {
-                            const browser = await puppeteer.launch({headless: false});
-                            const page = await browser.newPage();
-                            await page.goto('about:blank');
-                            const result = await page.evaluate(() => ${script});
-                            console.log('Result:', result);
-                            await browser.close();
-                        })();
-                    "`);
-
-                case 'close':
-                    return await this.executeCommand(`pkill -f puppeteer || true`);
-
-                default:
-                    return `Unknown action: ${action}. Available actions: goto, screenshot, click, type, scroll, wait, evaluate, close`;
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            const result = await response.json();
+            
+            if (result.error) {
+                return result.error;
+            }
+            
+            return result.message || 'Operation completed successfully';
+            
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error('Puppeteer tool error:', errorMessage);
+            
+            // Check if the server is not running
+            if (errorMessage.includes('fetch') || errorMessage.includes('ECONNREFUSED')) {
+                return 'Error: Puppeteer server is not running. Please start the puppeteer-server.cjs first using: node puppeteer-server.cjs';
+            }
+            
+            console.error('Puppeteer error:', errorMessage);
             return `Error executing Puppeteer operation: ${errorMessage}`;
         }
     }

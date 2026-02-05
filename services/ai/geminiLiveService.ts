@@ -16,26 +16,33 @@ export class GeminiLiveService implements AIConversationService {
 
     connect(options: AIConnectOptions): void {
         try {
-            // Try minimal configuration first to isolate the issue
+            // Comprehensive debugging
             console.log('=== GEMINI CONNECTION DEBUG START ===');
             console.log('API Key:', process.env.API_KEY || process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET');
             console.log('Model: gemini-2.5-flash-native-audio-preview-12-2025');
             console.log('Tools count:', options.config.tools?.length || 0);
             console.log('System instruction length:', options.config.systemInstruction?.length || 0);
             
-            // Try with minimal config first
-            console.log('Attempting connection with minimal config...');
+            // Log first few tool details for debugging
+            if (options.config.tools && options.config.tools.length > 0) {
+                console.log('First tool sample:', JSON.stringify(options.config.tools[0], null, 2).substring(0, 500) + '...');
+            }
+            
+            console.log('Attempting connection...');
             
             this.sessionPromise = (this.ai as any).live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                 callbacks: options.callbacks,
                 config: {
                     responseModalities: ['AUDIO'],
-                    // Remove potentially problematic config first
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    tools: options.config.tools,
+                    systemInstruction: options.config.systemInstruction,
                 }
             });
             
-            console.log('Minimal connection initiated successfully');
+            console.log('Connection promise created successfully');
             console.log('=== GEMINI CONNECTION DEBUG END ===');
             
         } catch (error) {
@@ -45,14 +52,18 @@ export class GeminiLiveService implements AIConversationService {
             console.error('Error stack:', error.stack);
             console.error('Full error:', error);
             
-            // Try fallback model
+            // Try fallback with debugging
             try {
-                console.log('Trying fallback model with minimal config...');
+                console.log('Trying fallback model...');
                 this.sessionPromise = (this.ai as any).live.connect({
                     model: 'gemini-1.5-flash',
                     callbacks: options.callbacks,
                     config: {
                         responseModalities: ['AUDIO'],
+                        inputAudioTranscription: {},
+                        outputAudioTranscription: {},
+                        tools: options.config.tools,
+                        systemInstruction: options.config.systemInstruction,
                     }
                 });
                 console.log('Fallback connection successful');
@@ -60,6 +71,7 @@ export class GeminiLiveService implements AIConversationService {
                 console.error('=== FALLBACK ERROR DEBUG ===');
                 console.error('Fallback error type:', fallbackError.constructor.name);
                 console.error('Fallback error message:', fallbackError.message);
+                console.error('Fallback error stack:', fallbackError.stack);
                 throw new Error(`Both models failed. Primary: ${error.message}, Fallback: ${fallbackError.message}`);
             }
         }

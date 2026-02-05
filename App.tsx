@@ -93,38 +93,7 @@ function App() {
     }
   }, []);
 
-  // Add error boundary for debugging
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('🚨 Global error:', event.error);
-    };
-    
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('🚨 Unhandled promise rejection:', event.reason);
-    };
-    
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
 
-  // Set loading to false after initialization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-      console.log('🚀 App initialization complete');
-    }, 1000);
-    
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
-  }, []);
 
   const t = useMemo(() => translations[lang], [lang]);
 

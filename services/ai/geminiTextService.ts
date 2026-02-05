@@ -21,7 +21,7 @@ export class GeminiTextService implements AIConversationService {
         this.ai = new GoogleGenAI({ apiKey });
     }
 
-    connect(options: AIConnectOptions): void {
+    async connect(options: AIConnectOptions): Promise<void> {
         try {
             console.log('=== GEMINI TEXT SERVICE CONNECTION ===');
             console.log('Model: gemini-2.5-flash');
@@ -29,20 +29,13 @@ export class GeminiTextService implements AIConversationService {
             
             this.callbacks = options.callbacks;
             
-            // Initialize chat with tools
-            const model = (this.ai as any).getGenerativeModel({
+            // For text service, we'll handle each message individually
+            // Store config for future use
+            this.chat = {
                 model: 'gemini-2.5-flash',
                 systemInstruction: options.config.systemInstruction,
                 tools: options.config.tools
-            });
-            
-            this.chat = model.startChat({
-                history: [],
-                generationConfig: {
-                    maxOutputTokens: 8192,
-                    temperature: 0.7,
-                }
-            });
+            };
             
             this.isConnected = true;
             console.log('🟢 TEXT SERVICE: Connected successfully');
@@ -69,9 +62,16 @@ export class GeminiTextService implements AIConversationService {
         try {
             console.log('📤 TEXT SERVICE: Sending text:', text.substring(0, 50) + '...');
             
-            const result = await this.chat.sendMessage(text);
-            const response = result.response;
-            const textResponse = response.text();
+            const response = await this.ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ 
+                    parts: [{ 
+                        text: text
+                    }] 
+                }]
+            });
+            
+            const textResponse = response.text;
             
             console.log('📥 TEXT SERVICE: Received response:', textResponse.substring(0, 50) + '...');
             

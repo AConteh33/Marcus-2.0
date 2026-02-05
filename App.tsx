@@ -46,7 +46,7 @@ import { soundEffects } from './services/sound/soundEffects';
 import { translations } from './constants';
 
 function App() {
-  const [showLandingPage, setShowLandingPage] = useState(false);
+  const [showLandingPage, setShowLandingPage] = useState(false);// FORCED TO FALSE TO AVOID BLANK SCREEN
   const [currentPersonality, setCurrentPersonality] = useState(personalityService.getCurrentPersonality().id);
   const [isTtsEnabled, setIsTtsEnabled] = useState(true);
   const [lang, setLang] = useState<Language>('en');
@@ -76,8 +76,9 @@ function App() {
   const [appointments, setAppointments] = useState<Appointment[]>(initialData.appointments);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
-  const [isElectron, setIsElectron] = useState(false);
+  const [isElectron, setIsElectron] = useState(false);// FORCED TO FALSE TO AVOID BLANK SCREEN
   const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
+  const [isAppLoading, setIsAppLoading] = useState(true); // Loading state to prevent black screen
 
   const ttsService = useRef<GeminiTTSService | null>(null);
   const ttsAudioContext = useRef<AudioContext | null>(null);
@@ -111,6 +112,19 @@ function App() {
     };
   }, []);
 
+  // Set loading to false after initialization
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+      console.log('🚀 App initialization complete');
+    }, 1000);
+    
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
 
   const t = useMemo(() => translations[lang], [lang]);
 

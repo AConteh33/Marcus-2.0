@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Note, Appointment, CalendarEvent, Language, ThoughtProcess, ToolUsage } from './types';
 // import type { LangChainTask } from './services/ai/langchainService'; // Removed - Background AI functionality removed
-import { useGeminiText } from './hooks/useGeminiText';
+import { useGeminiLive } from './hooks/useGeminiLive';
 import { ToolController } from './tools/toolController';
 import { SaveNoteTool } from './tools/saveNoteTool';
 import { SaveAppointmentTool } from './tools/saveAppointmentTool';
@@ -219,22 +219,7 @@ function App() {
     // Background AI functionality removed
   }, []);
 
-  const { 
-  orbState, 
-  transcripts, 
-  currentUserTranscript, 
-  currentAiTranscript, 
-  connect, 
-  disconnect, 
-  sendText, 
-  sendToolResponse, 
-  aiService,
-  showTextInput,
-  pendingText,
-  setPendingText,
-  handleTextInput,
-  cancelTextInput
-} = useGeminiText(toolController, addThought);
+  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = useGeminiLive(toolController, addThought);
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {
@@ -305,10 +290,13 @@ function App() {
     };
   }, []);
 
-  // Trigger TTS when AI finishes speaking (now enabled for text service)
+  // Trigger TTS when AI finishes speaking (only if not using Gemini Live audio)
   useEffect(() => {
-    // Enable TTS for text service since we're not using Gemini Live audio
-    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle') {
+    // Disable TTS when using Gemini Live since it already provides audio
+    // Check if aiService exists (from useGeminiLive) to determine if Gemini Live is active
+    const isGeminiLiveActive = orbState !== 'disconnected' && orbState !== 'connecting';
+    
+    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle' && !isGeminiLiveActive) {
       const speakAiResponse = async () => {
         try {
           const voiceName = personalityService.getVoiceName();
@@ -329,14 +317,16 @@ function App() {
         } catch (error) {
           console.error("AI TTS failed", error);
           if (error instanceof Error && error.message.includes("API key not valid")) {
-            alert("TTS API key is not valid. Please check your GEMINI_API_KEY in .env.local file.");
+            alert("AI TTS failed: API key is not valid. Please check your API key.");
           }
         }
       };
 
-      speakAiResponse();
+      // Small delay to ensure the AI response is fully processed
+      const timeoutId = setTimeout(speakAiResponse, 500);
+      return () => clearTimeout(timeoutId);
     }
-  }, [isTtsEnabled, ttsService, currentAiTranscript, orbState, personalityService, currentPersonality]);
+  }, [currentAiTranscript, orbState, isTtsEnabled, currentPersonality]);
 
   if (showLandingPage) {
     return (
@@ -433,7 +423,7 @@ function App() {
                 onDownloadPdf={handleDownloadPdf}
                 isDataAvailable={isDataAvailable}
                 onLanguageToggle={handleLanguageToggle}
-                activeToolUsage={null}
+                activeToolUsage={activeToolUsage}
                 thoughts={thoughts}
                 onClearThoughts={clearThoughts}
               />
@@ -467,49 +457,6 @@ function App() {
             v1.8.2
           </div>
         </div>
-
-        {/* Speech-to-Text Input Dialog */}
-        {showTextInput && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-yellow-400 text-lg font-semibold mb-4">
-                🎤 Speech Detected
-              </h3>
-              <p className="text-gray-300 text-sm mb-4">
-                I heard something. What did you want to say?
-              </p>
-              <input
-                type="text"
-                value={pendingText}
-                onChange={(e) => setPendingText(e.target.value)}
-                placeholder="Type your message here..."
-                className="w-full bg-gray-800 border border-yellow-500/20 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleTextInput(pendingText);
-                  } else if (e.key === 'Escape') {
-                    cancelTextInput();
-                  }
-                }}
-              />
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={() => handleTextInput(pendingText)}
-                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Send
-                </button>
-                <button
-                  onClick={cancelTextInput}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

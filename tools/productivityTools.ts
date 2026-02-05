@@ -55,20 +55,8 @@ export class ProductivityTools implements Tool {
                 properties: {
                     action: {
                         type: Type.STRING,
-                        enum: ["google-meet", "create-note", "read-note", "list-notes", "delete-note", "search-notes", "set-alarm", "list-alarms", "cancel-alarms", "test-alarm", "start-marcus", "check-marcus", "ensure-marcus"],
+                        enum: ["google-meet", "set-alarm", "list-alarms", "cancel-alarms", "test-alarm", "start-marcus", "check-marcus", "ensure-marcus"],
                         description: "Action to perform"
-                    },
-                    title: {
-                        type: Type.STRING,
-                        description: "Note title or alarm identifier"
-                    },
-                    content: {
-                        type: Type.STRING,
-                        description: "Note content or alarm message"
-                    },
-                    keyword: {
-                        type: Type.STRING,
-                        description: "Keyword to search in notes"
                     },
                     time: {
                         type: Type.STRING,
@@ -91,21 +79,11 @@ export class ProductivityTools implements Tool {
 
     async execute(args: ProductivityToolsArgs): Promise<string> {
         try {
-            const { action, title, content, keyword, time, message, autoStart } = args;
+            const { action, time, message, autoStart } = args;
 
             switch (action) {
                 case 'google-meet':
                     return await this.createGoogleMeet();
-                case 'create-note':
-                    return await this.createNote(title, content);
-                case 'read-note':
-                    return await this.readNote(title);
-                case 'list-notes':
-                    return await this.listNotes();
-                case 'delete-note':
-                    return await this.deleteNote(title);
-                case 'search-notes':
-                    return await this.searchNotes(keyword);
                 case 'set-alarm':
                     return await this.setAlarm(time, message, autoStart);
                 case 'list-alarms':
@@ -121,7 +99,7 @@ export class ProductivityTools implements Tool {
                 case 'ensure-marcus':
                     return await this.ensureMarcus();
                 default:
-                    return "❌ Unknown action. Available actions: google-meet, create-note, read-note, list-notes, delete-note, search-notes, set-alarm, list-alarms, cancel-alarms, test-alarm, start-marcus, check-marcus, ensure-marcus";
+                    return "❌ Unknown action. Available actions: google-meet, set-alarm, list-alarms, cancel-alarms, test-alarm, start-marcus, check-marcus, ensure-marcus";
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -206,7 +184,7 @@ export class ProductivityTools implements Tool {
         }
     }
 
-    private async setAlarm(time: string, message: string, autoStart: string = "no"): Promise<string> {
+    private async setAlarm(time: string, message: string, autoStart: string): Promise<string> {
         if (!time || !message) {
             return "❌ Time and message are required for setting alarms";
         }

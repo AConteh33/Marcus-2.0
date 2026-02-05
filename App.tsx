@@ -209,6 +209,10 @@ function App() {
     controller.register(new KeyboardControlTool());
 
     return controller;
+
+  // Use Gemini Live hook after toolController is defined
+  const geminiLiveHook = useGeminiLive(toolController, addThought);
+  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);
 
 
@@ -233,9 +237,6 @@ function App() {
     // Background AI functionality removed
   }, []);
 
-  // Conditionally use Gemini Live or TTS-only mode
-  const geminiLiveHook = useGeminiLive(toolController, addThought);
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook;
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {

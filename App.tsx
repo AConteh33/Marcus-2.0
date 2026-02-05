@@ -77,6 +77,7 @@ function App() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
   const [isElectron, setIsElectron] = useState(false);
+  const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
 
   const ttsService = useRef<GeminiTTSService | null>(null);
   const ttsAudioContext = useRef<AudioContext | null>(null);
@@ -219,7 +220,19 @@ function App() {
     // Background AI functionality removed
   }, []);
 
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = useGeminiLive(toolController, addThought);
+  // Conditionally use Gemini Live or TTS-only mode
+  const geminiLiveHook = useGeminiLive ? useGeminiLive(toolController, addThought) : null;
+  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook || {
+    orbState: 'disconnected',
+    transcripts: [],
+    currentUserTranscript: '',
+    currentAiTranscript: '',
+    connect: () => {},
+    disconnect: () => {},
+    sendText: () => {},
+    activeToolUsage: null,
+    updatePersonality: () => {}
+  };
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {
@@ -290,13 +303,10 @@ function App() {
     };
   }, []);
 
-  // Trigger TTS when AI finishes speaking (only if not using Gemini Live audio)
+  // Trigger TTS when AI finishes speaking (TTS-only mode)
   useEffect(() => {
-    // Disable TTS when using Gemini Live since it already provides audio
-    // Check if aiService exists (from useGeminiLive) to determine if Gemini Live is active
-    const isGeminiLiveActive = orbState !== 'disconnected' && orbState !== 'connecting';
-    
-    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle' && !isGeminiLiveActive) {
+    // Always use TTS instead of Gemini Live audio
+    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle') {
       const speakAiResponse = async () => {
         try {
           const voiceName = personalityService.getVoiceName();
@@ -455,6 +465,16 @@ function App() {
         <div className="fixed bottom-4 left-4 z-20">
           <div className="bg-gray-900/90 backdrop-blur-md border border-yellow-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-yellow-400/70 hover:text-yellow-400 transition-colors duration-200">
             v1.8.2
+          </div>
+          
+          {/* Audio Mode Toggle */}
+          <div className="mt-2 bg-gray-900/90 backdrop-blur-md border border-blue-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400/70 hover:text-blue-400 transition-colors duration-200">
+            <button
+              onClick={() => setUseGeminiLive(!useGeminiLive)}
+              className="w-full text-left hover:bg-blue-500/20 transition-colors duration-200"
+            >
+              {useGeminiLive ? '🎤 Gemini Live' : '🔊 TTS Only'}
+            </button>
           </div>
         </div>
       </div>

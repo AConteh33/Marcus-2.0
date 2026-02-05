@@ -219,7 +219,22 @@ function App() {
     // Background AI functionality removed
   }, []);
 
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, sendToolResponse, aiService } = useGeminiText(toolController, addThought);
+  const { 
+  orbState, 
+  transcripts, 
+  currentUserTranscript, 
+  currentAiTranscript, 
+  connect, 
+  disconnect, 
+  sendText, 
+  sendToolResponse, 
+  aiService,
+  showTextInput,
+  pendingText,
+  setPendingText,
+  handleTextInput,
+  cancelTextInput
+} = useGeminiText(toolController, addThought);
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {
@@ -452,6 +467,49 @@ function App() {
             v1.8.2
           </div>
         </div>
+
+        {/* Speech-to-Text Input Dialog */}
+        {showTextInput && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-yellow-400 text-lg font-semibold mb-4">
+                🎤 Speech Detected
+              </h3>
+              <p className="text-gray-300 text-sm mb-4">
+                I heard something. What did you want to say?
+              </p>
+              <input
+                type="text"
+                value={pendingText}
+                onChange={(e) => setPendingText(e.target.value)}
+                placeholder="Type your message here..."
+                className="w-full bg-gray-800 border border-yellow-500/20 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTextInput(pendingText);
+                  } else if (e.key === 'Escape') {
+                    cancelTextInput();
+                  }
+                }}
+              />
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => handleTextInput(pendingText)}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  Send
+                </button>
+                <button
+                  onClick={cancelTextInput}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,6 +18,8 @@ export const useGeminiText = (toolController?: ToolController, addThought?: (typ
     const [currentUserTranscript, setCurrentUserTranscript] = useState('');
     const [currentAiTranscript, setCurrentAiTranscript] = useState('');
     const [isConnected, setIsConnected] = useState(false);
+    const [showTextInput, setShowTextInput] = useState(false);
+    const [pendingText, setPendingText] = useState('');
 
     const aiService = useRef<AIConversationService | null>(null);
     const orbStateRef = useRef<OrbState>('disconnected');
@@ -100,19 +102,8 @@ export const useGeminiText = (toolController?: ToolController, addThought?: (typ
                     const fullBuffer = speechBuffer.flat();
                     speechBuffer = [];
                     
-                    // Create a simple text input since we don't have STT
-                    // In a real implementation, this would send to a STT service
-                    const recognizedText = prompt(`I heard something. What did you want to say?\n\n(Click OK to continue, or type your message):`);
-                    
-                    if (recognizedText && recognizedText.trim()) {
-                        setCurrentUserTranscript(recognizedText);
-                        accumulatedInput.current = recognizedText;
-                        
-                        // Send to AI service
-                        if (aiService.current) {
-                            aiService.current.sendText(recognizedText);
-                        }
-                    }
+                    // Show text input dialog instead of prompt
+                    setShowTextInput(true);
                 }
                 
                 setTimeout(() => setOrbState('idle'), 1000);
@@ -230,6 +221,27 @@ export const useGeminiText = (toolController?: ToolController, addThought?: (typ
         }
     }, []);
 
+    // Handle text input from speech detection
+    const handleTextInput = useCallback((text: string) => {
+        if (text && text.trim()) {
+            setCurrentUserTranscript(text);
+            accumulatedInput.current = text;
+            
+            // Send to AI service
+            if (aiService.current) {
+                sendText(text);
+            }
+        }
+        setShowTextInput(false);
+        setPendingText('');
+    }, [sendText]);
+
+    const cancelTextInput = useCallback(() => {
+        setShowTextInput(false);
+        setPendingText('');
+        setOrbState('idle');
+    }, []);
+
     // Auto-connect on mount
     useEffect(() => {
         connect();
@@ -246,6 +258,11 @@ export const useGeminiText = (toolController?: ToolController, addThought?: (typ
         disconnect,
         sendText,
         sendToolResponse,
-        aiService: aiService.current
+        aiService: aiService.current,
+        showTextInput,
+        pendingText,
+        setPendingText,
+        handleTextInput,
+        cancelTextInput
     };
 };

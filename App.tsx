@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Note, Appointment, CalendarEvent, Language, ThoughtProcess, ToolUsage } from './types';
 // import type { LangChainTask } from './services/ai/langchainService'; // Removed - Background AI functionality removed
-import { useGeminiLive } from './hooks/useGeminiLive';
+import { useGeminiText } from './hooks/useGeminiText';
 import { ToolController } from './tools/toolController';
 import { SaveNoteTool } from './tools/saveNoteTool';
 import { SaveAppointmentTool } from './tools/saveAppointmentTool';
@@ -77,8 +77,6 @@ function App() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
   const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
   const [isElectron, setIsElectron] = useState(false);
-  const [useGeminiLive, setUseGeminiLive] = useState(true); // Toggle between Live and TTS
-  const [isAppLoading, setIsAppLoading] = useState(true); // Loading state to prevent black screen
 
   const ttsService = useRef<GeminiTTSService | null>(null);
   const ttsAudioContext = useRef<AudioContext | null>(null);
@@ -87,45 +85,11 @@ function App() {
   useEffect(() => {
     try {
       ttsService.current = new GeminiTTSService();
-      console.log('✅ TTS service initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize TTS service:', error);
+      console.error('Failed to initialize TTS service:', error);
     }
   }, []);
-
-  // Add error boundary for debugging
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('🚨 Global error:', event.error);
-    };
-    
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('🚨 Unhandled promise rejection:', event.reason);
-    };
-    
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-    
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
-
-  // Set loading to false after initialization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-      console.log('🚀 App initialization complete');
-    }, 1000);
-    
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
-  }, []);
-
+  
   const t = useMemo(() => translations[lang], [lang]);
 
   useEffect(() => {
@@ -209,12 +173,30 @@ function App() {
     controller.register(new KeyboardControlTool());
 
     return controller;
-
-  // Use Gemini Live hook after toolController is defined
-  const geminiLiveHook = useGeminiLive(toolController, addThought);
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = geminiLiveHook;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);
 
+  // Check system status on app startup
+  useEffect(() => {
+    const checkSystemOnStartup = async () => {
+      try {
+        const systemStatus = new (await import('./tools/systemStatusTool')).SystemStatusTool();
+        const status = await systemStatus.execute({ check: 'puppeteer' });
+        
+        // If Puppeteer is not available, automatically try to install it
+        if (status.includes('Not installed')) {
+          console.log('🔧 Puppeteer not available - attempting automatic installation...');
+          const installResult = await systemStatus.execute({ check: 'install-puppeteer' });
+          console.log('📦 Puppeteer installation result:', installResult);
+        } else {
+          console.log('✅ Puppeteer is already available');
+        }
+      } catch (error) {
+        console.log('System check completed');
+      }
+    };
+
+    checkSystemOnStartup();
+  }, []);
 
   const addThought = useCallback((type: ThoughtProcess['type'], content: string, step?: number, totalSteps?: number) => {
     const newThought: ThoughtProcess = {
@@ -237,6 +219,7 @@ function App() {
     // Background AI functionality removed
   }, []);
 
+  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, sendToolResponse, aiService } = useGeminiText(toolController, addThought);
 
   // Handle personality change
   const handlePersonalityChange = (personalityId: string) => {
@@ -307,9 +290,9 @@ function App() {
     };
   }, []);
 
-  // Trigger TTS when AI finishes speaking (TTS-only mode)
+  // Trigger TTS when AI finishes speaking (now enabled for text service)
   useEffect(() => {
-    // Always use TTS instead of Gemini Live audio
+    // Enable TTS for text service since we're not using Gemini Live audio
     if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle') {
       const speakAiResponse = async () => {
         try {
@@ -331,16 +314,14 @@ function App() {
         } catch (error) {
           console.error("AI TTS failed", error);
           if (error instanceof Error && error.message.includes("API key not valid")) {
-            alert("AI TTS failed: API key is not valid. Please check your API key.");
+            alert("TTS API key is not valid. Please check your GEMINI_API_KEY in .env.local file.");
           }
         }
       };
 
-      // Small delay to ensure the AI response is fully processed
-      const timeoutId = setTimeout(speakAiResponse, 500);
-      return () => clearTimeout(timeoutId);
+      speakAiResponse();
     }
-  }, [currentAiTranscript, orbState, isTtsEnabled, currentPersonality]);
+  }, [isTtsEnabled, ttsService, currentAiTranscript, orbState, personalityService, currentPersonality]);
 
   if (showLandingPage) {
     return (
@@ -371,16 +352,7 @@ function App() {
       
       {/* Foreground/Content Layer */}
       <div className="col-start-1 row-start-1 z-10 w-full h-full min-h-0 bg-black/50 relative md:flex overflow-x-hidden">
-        {/* Loading Screen */}
-        {isAppLoading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-            <div className="text-yellow-400 text-xl font-mono animate-pulse">
-              🚀 Initializing Marcus...
-            </div>
-          </div>
-        )}
-        
-        <main className={`flex-1 flex flex-col items-center h-full p-4 min-h-0 ${isAppLoading ? 'opacity-50' : ''}`}>
+        <main className="flex-1 flex flex-col items-center h-full p-4 min-h-0">
 
           <div className="relative flex flex-col items-center justify-center mt-6 mb-4 pt-6 shrink-0">
             <AssistantOrbLiquid
@@ -446,7 +418,7 @@ function App() {
                 onDownloadPdf={handleDownloadPdf}
                 isDataAvailable={isDataAvailable}
                 onLanguageToggle={handleLanguageToggle}
-                activeToolUsage={activeToolUsage}
+                activeToolUsage={null}
                 thoughts={thoughts}
                 onClearThoughts={clearThoughts}
               />
@@ -478,16 +450,6 @@ function App() {
         <div className="fixed bottom-4 left-4 z-20">
           <div className="bg-gray-900/90 backdrop-blur-md border border-yellow-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-yellow-400/70 hover:text-yellow-400 transition-colors duration-200">
             v1.8.2
-          </div>
-          
-          {/* Audio Mode Toggle */}
-          <div className="mt-2 bg-gray-900/90 backdrop-blur-md border border-blue-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-blue-400/70 hover:text-blue-400 transition-colors duration-200">
-            <button
-              onClick={() => setUseGeminiLive(!useGeminiLive)}
-              className="w-full text-left hover:bg-blue-500/20 transition-colors duration-200"
-            >
-              {useGeminiLive ? '🎤 Gemini Live' : '🔊 TTS Only'}
-            </button>
           </div>
         </div>
       </div>

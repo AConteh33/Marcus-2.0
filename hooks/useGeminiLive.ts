@@ -307,7 +307,7 @@ export const useGeminiLive = (toolController?: ToolController, addThought?: (typ
                 },
                 config: {
                     systemInstruction: promptService.getSystemInstruction() + conversationContext,
-                    tools: [{ functionDeclarations: toolController.getDeclarations() }],
+                    tools: toolController.getDeclarations().map(fd => ({ functionDeclarations: [fd] })),
                 }
             });
         } catch (error) {

@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import type { AIConversationService, AIConnectOptions } from './aiService';
 
 
-export class GeminiLiveService {
+export class GeminiLiveService implements AIConversationService {
     private ai: GoogleGenAI;
     private sessionPromise: Promise<any> | null = null;
     private reconnectAttempts = 0;

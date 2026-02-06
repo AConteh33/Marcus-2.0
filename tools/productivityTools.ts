@@ -2,10 +2,7 @@ import type { Tool } from './tool';
 import { FunctionDeclaration, Type } from "@google/genai";
 
 interface ProductivityToolsArgs {
-    action: 'google-meet' | 'create-note' | 'read-note' | 'list-notes' | 'delete-note' | 'search-notes' | 'set-alarm' | 'list-alarms' | 'cancel-alarms' | 'test-alarm' | 'start-marcus' | 'check-marcus' | 'ensure-marcus';
-    title?: string;
-    content?: string;
-    keyword?: string;
+    action: 'google-meet' | 'set-alarm' | 'list-alarms' | 'cancel-alarms' | 'test-alarm' | 'start-marcus' | 'check-marcus' | 'ensure-marcus';
     time?: string;
     message?: string;
     autoStart?: string;

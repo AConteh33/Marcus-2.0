@@ -48,16 +48,10 @@ export class ToolController {
      * @returns A promise that resolves with the string result of the tool's execution.
      */
     public async executeTool(name: string, args: any): Promise<string> {
-        console.log(`🔧 TOOL EXECUTION: Starting tool "${name}"`);
-        console.log(`🔧 TOOL EXECUTION: Args:`, args);
-        
         const tool = this.tools.get(name);
         if (!tool) {
-            console.log(`❌ TOOL EXECUTION: Tool "${name}" not found`);
             return `Error: Tool with name "${name}" not found.`;
         }
-
-        console.log(`✅ TOOL EXECUTION: Tool "${name}" found, executing...`);
 
         // Start tracking tool usage
         this.currentToolUsage = {
@@ -68,11 +62,7 @@ export class ToolController {
         this.notifyToolUsageChange();
 
         try {
-            console.log(`⚡ TOOL EXECUTION: Calling ${name}.execute()`);
             const result = await tool.execute(args);
-            console.log(`🎉 TOOL EXECUTION: Tool "${name}" completed successfully`);
-            console.log(`🎉 TOOL EXECUTION: Result length:`, result.length);
-            
             if (this.currentToolUsage) {
                 this.currentToolUsage.status = 'completed';
                 this.currentToolUsage.result = result;
@@ -88,7 +78,7 @@ export class ToolController {
             return result;
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
-            console.error(`❌ TOOL EXECUTION: Error executing tool "${name}":`, errorMessage);
+            console.error(`Error executing tool "${name}":`, errorMessage);
             
             if (this.currentToolUsage) {
                 this.currentToolUsage.status = 'error';

@@ -30,7 +30,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   keyboardControl: (args: any) => ipcRenderer.invoke('keyboard-control', args),
   
   // Screenshot functionality
-  takeScreenshot: (args: any) => ipcRenderer.invoke('take-screenshot', args)
+  takeScreenshot: (args: any) => ipcRenderer.invoke('take-screenshot', args),
+  
+  // RAG (Retrieval Augmented Generation) functionality
+  ragIngestDocument: (args: any) => ipcRenderer.invoke('rag-ingest-document', args),
+  ragSearchKnowledgeBase: (args: any) => ipcRenderer.invoke('rag-search-knowledge-base', args),
+  ragListDocuments: () => ipcRenderer.invoke('rag-list-documents'),
+  ragRemoveDocument: (args: any) => ipcRenderer.invoke('rag-remove-document', args)
 });
 
 // Type definitions for the exposed API
@@ -50,6 +56,10 @@ declare global {
       mouseControl: (args: any) => Promise<string>;
       keyboardControl: (args: any) => Promise<string>;
       takeScreenshot: (args: any) => Promise<string>;
+      ragIngestDocument: (args: any) => Promise<string>;
+      ragSearchKnowledgeBase: (args: any) => Promise<any[]>;
+      ragListDocuments: () => Promise<any[]>;
+      ragRemoveDocument: (args: any) => Promise<string>;
     };
   }
 }

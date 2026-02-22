@@ -5,6 +5,9 @@ import { homedir, platform } from 'os';
 // Import auto-update service using require for CommonJS compatibility
 const { AutoUpdateService } = require('./autoUpdateService.cjs');
 
+// Import RAG service using require for CommonJS compatibility
+const { RAGService } = require('../services/rag/ragService.cjs');
+
 // Type definition for AutoUpdateService
 type AutoUpdateServiceType = InstanceType<typeof AutoUpdateService>;
 
@@ -492,9 +495,83 @@ ipcMain.handle('take-screenshot', async (event, args: any) => {
     console.log('🖼️ ELECTRON SCREENSHOT: Result:', result);
     return result;
     
+});
+
+// RAG (Retrieval Augmented Generation) handlers
+let ragService: any = null;
+
+ipcMain.handle('rag-ingest-document', async (event, args: any) => {
+  try {
+    console.log('🧠 RAG IPC: Ingesting document');
+    
+    if (!ragService) {
+      ragService = new RAGService();
+    }
+    
+    const result = await ragService.ingestDocument(args.content, args.metadata);
+    console.log('🧠 RAG IPC: Ingestion complete');
+    return result;
+    
   } catch (error) {
-    const errorMessage = `Failed to take screenshot: ${error instanceof Error ? error.message : String(error)}`;
-    console.error('🖼️ ELECTRON SCREENSHOT ERROR:', errorMessage);
+    const errorMessage = `Failed to ingest document: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('🧠 RAG IPC ERROR:', errorMessage);
+    return errorMessage;
+  }
+});
+
+ipcMain.handle('rag-search-knowledge-base', async (event, args: any) => {
+  try {
+    console.log('🧠 RAG IPC: Searching knowledge base');
+    
+    if (!ragService) {
+      ragService = new RAGService();
+    }
+    
+    const results = await ragService.searchKnowledgeBase(args.query, args.limit);
+    console.log('🧠 RAG IPC: Search complete, found', results.length, 'results');
+    return results;
+    
+  } catch (error) {
+    const errorMessage = `Failed to search knowledge base: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('🧠 RAG IPC ERROR:', errorMessage);
+    return errorMessage;
+  }
+});
+
+ipcMain.handle('rag-list-documents', async (event, args: any) => {
+  try {
+    console.log('🧠 RAG IPC: Listing documents');
+    
+    if (!ragService) {
+      ragService = new RAGService();
+    }
+    
+    const documents = await ragService.listDocuments();
+    console.log('🧠 RAG IPC: Found', documents.length, 'documents');
+    return documents;
+    
+  } catch (error) {
+    const errorMessage = `Failed to list documents: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('🧠 RAG IPC ERROR:', errorMessage);
+    return errorMessage;
+  }
+});
+
+ipcMain.handle('rag-remove-document', async (event, args: any) => {
+  try {
+    console.log('🧠 RAG IPC: Removing document:', args.title);
+    
+    if (!ragService) {
+      ragService = new RAGService();
+    }
+    
+    const result = await ragService.removeDocument(args.title);
+    console.log('🧠 RAG IPC: Removal complete');
+    return result;
+    
+  } catch (error) {
+    const errorMessage = `Failed to remove document: ${error instanceof Error ? error.message : String(error)}`;
+    console.error('🧠 RAG IPC ERROR:', errorMessage);
     return errorMessage;
   }
 });

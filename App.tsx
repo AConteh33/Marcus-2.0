@@ -24,10 +24,11 @@ import { ProductivityTools } from './tools/productivityTools';
 import { PythonExcelTool } from './tools/pythonExcelTool';
 import { MouseControlTool } from './tools/mouseControlTool';
 import { KeyboardControlTool } from './tools/keyboardControlTool';
-// Temporarily comment out old Excel tools that cause build issues
-// import { ExcelTool } from './tools/excelTool';
-// import { EnhancedExcelTool } from './tools/enhancedExcelTool';
-// import { ExcelTerminalTool } from './tools/excelTerminalTool';
+// RAG Tools
+import { IngestDocumentTool } from './tools/ingestDocumentTool';
+import { SearchKnowledgeBaseTool } from './tools/searchKnowledgeBaseTool';
+import { ListKnowledgeBaseTool } from './tools/listKnowledgeBaseTool';
+import { RemoveDocumentTool } from './tools/removeDocumentTool';
 import { generatePdf } from './services/pdf';
 import AssistantOrbLiquid from './components/AssistantOrbLiquid';
 import BackgroundSciFi from './components/BackgroundSciFi';
@@ -171,6 +172,12 @@ function App() {
     controller.register(new PythonExcelTool());
     controller.register(new MouseControlTool());
     controller.register(new KeyboardControlTool());
+    
+    // Register RAG (Retrieval Augmented Generation) tools
+    controller.register(new IngestDocumentTool());
+    controller.register(new SearchKnowledgeBaseTool());
+    controller.register(new ListKnowledgeBaseTool());
+    controller.register(new RemoveDocumentTool());
 
     return controller;
   }, [onNoteSaved, onAppointmentSaved, onEventSaved]);

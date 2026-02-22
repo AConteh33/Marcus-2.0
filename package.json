@@ -20,9 +20,11 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
+    "chromadb": "^3.3.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "electron-updater": "^6.7.3",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "googleapis": "^170.1.0",
     "lucide-react": "^0.563.0",
@@ -31,8 +33,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "^0.166.1",
-    "xlsx": "^0.18.5",
-    "exceljs": "^4.4.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@electron-toolkit/utils": "^3.0.0",
@@ -80,15 +81,23 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "icon.ico"
@@ -97,11 +106,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "category": "public.app-category.productivity",
@@ -115,19 +130,29 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "rpm",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "snap",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Office",

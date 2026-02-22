@@ -19,7 +19,8 @@ export class GeminiLiveService implements AIConversationService {
             // Comprehensive debugging
             console.log('=== GEMINI CONNECTION DEBUG START ===');
             console.log('API Key:', process.env.API_KEY || process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET');
-            console.log('Connecting with Gemini 2.5-flash-native-audio-preview-09-2025 and tools:', options.config.tools?.length || 0, 'tools');
+            console.log('Model: gemini-2.5-flash-native-audio-preview');
+            console.log('Connecting with Gemini 2.5-flash-native-audio-preview and tools:', options.config.tools?.length || 0, 'tools');
             console.log('System instruction length:', options.config.systemInstruction?.length || 0);
             
             // Log first few tool details for debugging
@@ -30,7 +31,7 @@ export class GeminiLiveService implements AIConversationService {
             console.log('Attempting connection...');
             
             this.sessionPromise = (this.ai as any).live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                model: 'gemini-2.5-flash-native-audio-preview',
                 callbacks: options.callbacks,
                 config: {
                     responseModalities: ['AUDIO'],
@@ -53,9 +54,9 @@ export class GeminiLiveService implements AIConversationService {
             
             // Try fallback with debugging
             try {
-                console.log('Trying fallback model gemini-2.5-flash-native-audio-preview-09-2025...');
+                console.log('Trying fallback model gemini-2.5-flash-native-audio-preview...');
                 this.sessionPromise = (this.ai as any).live.connect({
-                    model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                    model: 'gemini-2.5-flash-native-audio-preview',
                     callbacks: options.callbacks,
                     config: {
                         responseModalities: ['AUDIO'],
@@ -71,7 +72,7 @@ export class GeminiLiveService implements AIConversationService {
                 console.error('Fallback error type:', fallbackError.constructor.name);
                 console.error('Fallback error message:', fallbackError.message);
                 console.error('Fallback error stack:', fallbackError.stack);
-                throw new Error(`Gemini 2.5-flash-native-audio-preview-09-2025 failed: With tools: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+                throw new Error(`Gemini 2.5-flash-native-audio-preview failed: With tools: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
             }
         }
     }

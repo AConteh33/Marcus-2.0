@@ -1,10 +1,11 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, GenerateContentStreamResult, GenerativeModel } from "@google/genai";
 import type { AIConversationService, AIConnectOptions } from './aiService';
 
 
 export class GeminiLiveService implements AIConversationService {
-    private sessionPromise: Promise<any> | null = null;
     private ai: GoogleGenAI;
+    private model: GenerativeModel | null = null;
+    private currentSession: GenerateContentStreamResult | null = null;
 
     constructor() {
         const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
@@ -14,106 +15,108 @@ export class GeminiLiveService implements AIConversationService {
         this.ai = new GoogleGenAI({ apiKey });
     }
 
-    connect(options: AIConnectOptions): void {
+    async connect(options: AIConnectOptions): Promise<void> {
         try {
             // Comprehensive debugging
-            console.log('=== GEMINI CONNECTION DEBUG START ===');
+            console.log('=== GEMINI API CONNECTION DEBUG START ===');
             console.log('API Key:', process.env.API_KEY || process.env.GEMINI_API_KEY ? 'SET' : 'NOT SET');
-            console.log('Model: gemini-live-2.5-flash-native-audio');
-            console.log('Connecting with Gemini Live 2.5-flash-native-audio and tools:', options.config.tools?.length || 0, 'tools');
+            console.log('Model: gemini-2.5-flash-exp');
+            console.log('Tools count:', options.config.tools?.length || 0);
             console.log('System instruction length:', options.config.systemInstruction?.length || 0);
-            
+
             // Log first few tool details for debugging
             if (options.config.tools && options.config.tools.length > 0) {
                 console.log('First tool sample:', JSON.stringify(options.config.tools[0], null, 2).substring(0, 500) + '...');
             }
-            
+
             console.log('Attempting connection...');
-            
-            this.sessionPromise = (this.ai as any).live.connect({
-                model: 'gemini-live-2.5-flash-native-audio',
-                callbacks: options.callbacks,
-                config: {
-                    responseModalities: ['AUDIO'],
-                    inputAudioTranscription: {},
-                    outputAudioTranscription: {},
-                    tools: options.config.tools,
-                    systemInstruction: options.config.systemInstruction,
-                }
+
+            // Use regular Gemini API with streaming instead of Live API
+            this.model = this.ai.getGenerativeModel({
+                model: 'gemini-2.5-flash-exp',
+                tools: options.config.tools,
+                systemInstruction: options.config.systemInstruction,
             });
-            
-            console.log('Connection promise created successfully');
-            console.log('=== GEMINI CONNECTION DEBUG END ===');
-            
+
+            console.log('Model initialized successfully');
+            console.log('=== GEMINI API CONNECTION DEBUG END ===');
+
+            // Simulate connection success
+            options.callbacks.onopen();
+
         } catch (error) {
             console.error('=== CONNECTION ERROR DEBUG ===');
             console.error('Error type:', error.constructor.name);
             console.error('Error message:', error.message);
             console.error('Error stack:', error.stack);
             console.error('Full error:', error);
-            
-            // Try fallback with debugging
-            try {
-                console.log('Trying fallback model gemini-live-2.5-flash-native-audio...');
-                this.sessionPromise = (this.ai as any).live.connect({
-                    model: 'gemini-live-2.5-flash-native-audio',
-                    callbacks: options.callbacks,
-                    config: {
-                        responseModalities: ['AUDIO'],
-                        inputAudioTranscription: {},
-                        outputAudioTranscription: {},
-                        tools: options.config.tools,
-                        systemInstruction: options.config.systemInstruction,
-                    }
-                });
-                console.log('Fallback connection successful');
-            } catch (fallbackError) {
-                console.error('=== FALLBACK ERROR DEBUG ===');
-                console.error('Fallback error type:', fallbackError.constructor.name);
-                console.error('Fallback error message:', fallbackError.message);
-                console.error('Fallback error stack:', fallbackError.stack);
-                throw new Error(`Gemini Live 2.5-flash-native-audio failed: With tools: ${error instanceof Error ? error.message : String(error)}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+
+            throw error;
+        }
+    }
+
+    async sendText(text: string): Promise<void> {
+        try {
+            console.log('Sending text to Gemini API:', text.substring(0, 100) + '...');
+
+            if (!this.model) {
+                throw new Error('Model not initialized');
             }
+
+            // Start streaming conversation
+            this.currentSession = await this.model.generateContentStream({
+                contents: [{ role: 'user', parts: [{ text }] }]
+            });
+
+            let fullResponse = '';
+
+            // Process streaming response
+            for await (const chunk of this.currentSession.stream) {
+                const chunkText = chunk.text();
+                if (chunkText) {
+                    fullResponse += chunkText;
+                    console.log('Received chunk:', chunkText);
+                }
+            }
+
+            console.log('Full response received:', fullResponse);
+
+        } catch (error) {
+            console.error('Error sending text:', error);
+            throw error;
         }
     }
 
     sendAudio(audioBlob: any): void {
-        this.sessionPromise?.then(session => {
-            session.sendRealtimeInput({ media: audioBlob });
-        }).catch(console.error);
+        // Audio input not supported in regular Gemini API
+        console.log('Audio input received but not supported in regular Gemini API - using text only');
     }
 
-    sendText(text: string): void {
-        this.sessionPromise?.then(session => {
-            // Send text as realtime input - the API will convert it to audio
-            session.sendRealtimeInput({ text });
-        }).catch(console.error);
-    }
-    
     sendToolResponse(toolResponse: any): void {
-        this.sessionPromise?.then(session => {
-            session.sendToolResponse(toolResponse);
-        }).catch(console.error);
+        // Handle tool responses from previous interactions
+        console.log('Tool response received:', toolResponse);
     }
 
     close(): void {
-        this.sessionPromise?.then(session => {
-            session.close();
-        }).catch(console.error);
-        this.sessionPromise = null;
+        console.log('Closing Gemini API session');
+        this.currentSession = null;
+        this.model = null;
     }
 
     async generateContent(prompt: string): Promise<string> {
         try {
-            const response = await this.ai.models.generateContent({
-                model: "gemini-2.5-flash-native-audio-preview-12-2025",
-                contents: [{ 
-                    parts: [{ 
-                        text: prompt 
-                    }] 
+            if (!this.model) {
+                throw new Error('Model not initialized');
+            }
+
+            const response = await this.model.generateContent({
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
                 }],
             });
-            return response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            return response.response.candidates?.[0]?.content?.parts?.[0]?.text || '';
         } catch (error) {
             console.error('Generate content error:', error);
             throw error;

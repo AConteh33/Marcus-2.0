@@ -1,24 +1,19 @@
 const express = require('express');
 const { exec } = require('child_process');
 const cors = require('cors');
+const https = require('https');
 
 const app = express();
 const PORT = 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000'], // Allow Vite dev server
+  origin: true,
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 app.use(express.json());
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
 
 // Terminal command execution endpoint
 app.post('/api/terminal', async (req, res) => {
@@ -79,21 +74,60 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Terminal service is running' });
 });
 
+// Search endpoint - proxies DuckDuckGo API to avoid CORS issues
+app.post('/api/search', async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    console.log(`Searching: ${query}`);
+
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+    
+    https.get(url, (response) => {
+      let data = '';
+      
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      response.on('end', () => {
+        try {
+          const results = JSON.parse(data);
+          console.log(`Search completed for: ${query}`);
+          res.json(results);
+        } catch (parseError) {
+          console.error('Failed to parse DuckDuckGo response:', parseError);
+          res.status(500).json({ error: 'Failed to parse search results' });
+        }
+      });
+    }).on('error', (error) => {
+      console.error('DuckDuckGo request failed:', error);
+      res.status(500).json({ error: 'Search request failed' });
+    });
+
+  } catch (error) {
+    console.error('Unexpected error in search endpoint:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  // Keep server running
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Keep server running
 });
 
-// Start server with error handling
-app.listen(PORT, () => {
-  console.log(`Terminal service running on http://localhost:${PORT}`);
-  console.log('CORS enabled for: http://localhost:5173, http://localhost:3000, http://127.0.0.1:5173, http://127.0.0.1:3000');
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Terminal service running on http://0.0.0.0:${PORT}`);
+  console.log('CORS enabled for all origins');
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Port ${PORT} is already in use. Please try a different port.`);

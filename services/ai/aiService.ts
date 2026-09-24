@@ -9,7 +9,9 @@ export interface AIConversationCallbacks {
 
 export interface AIConversationConfig {
     systemInstruction: string;
-    tools: [{ functionDeclarations: FunctionDeclaration[] }];
+    tools: { functionDeclarations: FunctionDeclaration[] }[];
+    voiceName?: string;
+    onToolCall?: (name: string, args: any) => Promise<string>;
 }
 
 export interface AIConnectOptions {
@@ -28,7 +30,7 @@ export interface AIConversationService {
      * Sends a chunk of audio data to the service.
      * @param audioBlob - The audio data to send.
      */
-    sendAudio(audioBlob: Blob): void;
+    sendAudio(audioBlob: { data: string; mimeType: string }): void;
 
     /**
      * Sends a text message to the service (will be converted to speech).

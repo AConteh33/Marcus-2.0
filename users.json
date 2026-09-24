@@ -1,0 +1,105 @@
+{"users": [
+{
+  "localId": "DCJiJFA0TYSqaIAl84WPQ8BIZj92",
+  "email": "test@test.com",
+  "emailVerified": false,
+  "passwordHash": "7ZvsaFpXt3wHG6BoXhwYHDjolBBAjXAfWgQ0sAPhWVCC9jxJRvdtMzpFfcvYhqp+RT31qZfyMn0JsrCHIlHRAQ==",
+  "salt": "EiqNzaHx/fLNPQ==",
+  "displayName": "Test",
+  "lastSignedInAt": "1763779807577",
+  "createdAt": "1753383024459",
+  "providerUserInfo": []
+},
+{
+  "localId": "RjyRC8HIGFSle1AVxmx9R0NIBA72",
+  "email": "agent@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "ksFSMtkkijugmpvahM41qy9RiUzouMlnTGFZuxPfN2EHWAKwn6ilCLE4yvuHYM0kuwyuN/7tSch12soQhpINXw==",
+  "salt": "RjJ4WKkkEkiXpg==",
+  "lastSignedInAt": "1764778605120",
+  "createdAt": "1763397797425",
+  "providerUserInfo": []
+},
+{
+  "localId": "VwcIGzR3fJa2lO8ZSnxMS9fF8383",
+  "email": "jaylyes.info@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "ZDr9lit4gDMaC9azQ8NlzkICWyHIpPQWgqRP2TmGBw4c7UOYyOZ4LFYLhRXEiO4LL6dRUbTn7EGz3C3IHh0xLA==",
+  "salt": "VNiMZAWyfuL2zw==",
+  "displayName": "Jaylyes Odyssey",
+  "lastSignedInAt": "1758965817129",
+  "createdAt": "1758810549609",
+  "providerUserInfo": []
+},
+{
+  "localId": "dwtmA9ORbkOfYkSn5nnIoM3ILWn2",
+  "email": "ggg@gg.com",
+  "emailVerified": false,
+  "passwordHash": "/pLWQ+3HZB09ousIVMi0F3WnOYE9iGi4ydFHL5OQNHTV3i3pC4GiTVxpIBbx00fT8n6014tioJ9p3X+mVW1vSQ==",
+  "salt": "KG25+9Jg9+UmHA==",
+  "displayName": "gggg",
+  "lastSignedInAt": "1758963782447",
+  "createdAt": "1758841971086",
+  "providerUserInfo": []
+},
+{
+  "localId": "e4NOLOyOmkdx75RflgOc3mS3haS2",
+  "email": "admin@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "dB7mIFD0ApJmfUZoIHgv3LUYQ95BQJESWjpiOsR8a7bOfn5CtRYTnv/oqQn0cdLOBYa8/ShLOAcogF5oBO7qkw==",
+  "salt": "3r9xr5BPHkMjmg==",
+  "lastSignedInAt": "1764759359488",
+  "createdAt": "1763397794999",
+  "providerUserInfo": []
+},
+{
+  "localId": "fKzfHo96OFbSCyCxnwKT4Nletsm2",
+  "email": "super_admin@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "r5VNk2ZZygK//Nt2iKwXfzQx41fCVOdb9WwvAOEDB+8slTUJLXn4qtKHnlaFfVnb4q7q9eUUZtYGOeOf3okEaA==",
+  "salt": "d1saKKEE/bH5Xw==",
+  "lastSignedInAt": "1765509724598",
+  "createdAt": "1763397794050",
+  "providerUserInfo": []
+},
+{
+  "localId": "ow0FwlpQ3lfPTzjaYubSel5iS6p1",
+  "email": "qa_auditor@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "ZwDDbeU5VEqaDiad5HSYsmCiiLJilu1G3jJujizpPKVemDrUaV4vLVx7nEen451Vu6/Q4BpnyZYJrvLtstR7PQ==",
+  "salt": "t47ogY5htyndTA==",
+  "lastSignedInAt": "1763487905510",
+  "createdAt": "1763397798231",
+  "providerUserInfo": []
+},
+{
+  "localId": "ueEmTlCxYyZCEdeok29TV0Dns1C2",
+  "email": "abdulrayc@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "GXMcXIWt0JPKM/TPYnE5SQX+ETIODCnlNOpc8b7xmKvjZ1qJpjF4pIc2JlzwTrfDRTShnySNWsWHfboSWYD1hw==",
+  "salt": "bQLgMtAPhRZYCQ==",
+  "lastSignedInAt": "1782471517897",
+  "createdAt": "1782314503335",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "voaveGstmTY2ulHfOHQKGzJTSlm1",
+  "email": "supervisor@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "Kt0PNQiaE/XUGGSYA8Qm6OGAQXfYsJWVnw8XbWVSqZXRcuoqpJyoGMCWbBjol46+8CzrwKFuvXBPm4S2xMGqiA==",
+  "salt": "MHMjdwpU6FIPzQ==",
+  "lastSignedInAt": "1763653857921",
+  "createdAt": "1763397796574",
+  "providerUserInfo": []
+},
+{
+  "localId": "yvUvZNYW2Uf0P0IjhBa4jU6kYrU2",
+  "email": "manager@telecrm.com",
+  "emailVerified": false,
+  "passwordHash": "iilQQHny9kSvRnTKNdvdgax9ORkTS47NCgAuFig3pIo+80VaF/V5BpRFoM2oXOxtlzCRfo+8UIzA2qMIyUj5ew==",
+  "salt": "lsPwsuyXYoMySQ==",
+  "lastSignedInAt": "1764351049391",
+  "createdAt": "1763397795813",
+  "providerUserInfo": []
+}]}

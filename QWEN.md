@@ -1,1 +1,0 @@
-dont run "npm run dev" and only do the tasks required, ask the user to run the npm run dev if needed

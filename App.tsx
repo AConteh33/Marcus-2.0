@@ -1,462 +1,412 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { Note, Appointment, CalendarEvent, Language, ThoughtProcess, ToolUsage } from './types';
-// import type { LangChainTask } from './services/ai/langchainService'; // Removed - Background AI functionality removed
+import React, { useState, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useGeminiLive } from './hooks/useGeminiLive';
 import { ToolController } from './tools/toolController';
-import { SaveNoteTool } from './tools/saveNoteTool';
-import { SaveAppointmentTool } from './tools/saveAppointmentTool';
-import { SaveCalendarEventTool, GetCalendarEventsTool, UpdateCalendarEventTool, DeleteCalendarEventTool, GetAppointmentsTool, UpdateAppointmentTool, DeleteAppointmentTool } from './tools/stubTools';
-import { ScreenshotTool } from './tools/screenshotTool';
-import { ServerManagementTool } from './tools/serverManagementTool';
+import { AddToOrderTool, RemoveFromOrderTool, UpdateOrderItemTool, ClearOrderTool, GetOrderSummaryTool, ListMenuTool } from './tools/foodOrderTools';
+import { PlaceOrderTool, CancelOrderTool } from './tools/confirmCancelTools';
 import { EndSessionTool } from './tools/endSessionTool';
-import { SetLanguagePreferenceTool } from './tools/setLanguagePreferenceTool';
-import { GetNotesTool } from './tools/getNotesTool';
-import { UpdateNoteTool } from './tools/updateNoteTool';
-import { DeleteNoteTool } from './tools/deleteNoteTool';
-import { ElectronTerminalTool } from './tools/electronTerminalTool';
-import { FileSearchTool } from './tools/fileSearchTool';
-import { EnhancedFileSearchTool } from './tools/enhancedFileSearchTool';
-import { DuckDuckGoSearchTool } from './tools/duckDuckGoSearchTool';
-import { PuppeteerTool } from './tools/puppeteerTool';
-import { PuppeteerTerminalTool } from './tools/puppeteerTerminalTool';
-import { SystemStatusTool } from './tools/systemStatusTool';
-import { ProductivityTools } from './tools/productivityTools';
-import { PythonExcelTool } from './tools/pythonExcelTool';
-import { MouseControlTool } from './tools/mouseControlTool';
-import { KeyboardControlTool } from './tools/keyboardControlTool';
-// Temporarily comment out old Excel tools that cause build issues
-// import { ExcelTool } from './tools/excelTool';
-// import { EnhancedExcelTool } from './tools/enhancedExcelTool';
-// import { ExcelTerminalTool } from './tools/excelTerminalTool';
-import { generatePdf } from './services/pdf';
-import AssistantOrbLiquid from './components/AssistantOrbLiquid';
-import BackgroundSciFi from './components/BackgroundSciFi';
-import InformationPanelSciFi from './components/InformationPanelSciFi';
-import { CollapsedPanel } from './components/CollapsedPanel';
+import { SetLanguageTool, type UILanguage } from './tools/setLanguageTool';
+import { FoodMenu } from './components/FoodMenu';
+import { OrderWidget } from './components/OrderWidget';
 import { TranscriptView } from './components/TranscriptView';
 import { TextInput } from './components/TextInput';
-import { PanelToggleIcon } from './components/Icons';
-import { GeminiTTSService } from './services/tts/geminiTTSService';
-import { decode, decodeAudioData } from './utils/audio';
-import { AutoUpdateManager } from './components/AutoUpdateManager';
-import { AIPersonalitySettings } from './components/AIPersonalitySettings';
-import { personalityService } from './services/personalityService';
-import LandingPage from './components/LandingPage';
-import { soundEffects } from './services/sound/soundEffects';
-import { translations } from './constants';
+import type { OrderItem, MenuItem } from './data/menuData';
+import { calculateOrderTotal, formatPrice, menuCategories } from './data/menuData';
+import { labels } from './utils/labels';
 
-function App() {
-  const [showLandingPage, setShowLandingPage] = useState(false);
-  const [currentPersonality, setCurrentPersonality] = useState(personalityService.getCurrentPersonality().id);
-  const [isTtsEnabled, setIsTtsEnabled] = useState(true);
-  const [lang, setLang] = useState<Language>('en');
-  const [isPanelVisible, setIsPanelVisible] = useState(true);
-  const [newItemsCount, setNewItemsCount] = useState({ notes: 0, appointments: 0, calendarEvents: 0 });
-  
-  // Load data from sessionStorage on mount
-  const loadSessionData = (): { notes: Note[]; appointments: Appointment[]; calendarEvents: CalendarEvent[] } => {
-    try {
-      const saved = sessionStorage.getItem('side_panel_data');
-      if (saved) {
-        const data = JSON.parse(saved);
-        return {
-          notes: data.notes || [],
-          appointments: data.appointments || [],
-          calendarEvents: data.calendarEvents || []
-        };
+const AdminLogin = lazy(() => import('./components/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const MenuManager = lazy(() => import('./components/admin/MenuManager').then(m => ({ default: m.MenuManager })));
+const AIScriptEditor = lazy(() => import('./components/admin/AIScriptEditor').then(m => ({ default: m.AIScriptEditor })));
+const ConversationLog = lazy(() => import('./components/admin/ConversationLog').then(m => ({ default: m.ConversationLog })));
+const QRGenerator = lazy(() => import('./components/admin/QRGenerator').then(m => ({ default: m.QRGenerator })));
+
+function CustomerApp() {
+  const navigate = useNavigate();
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [widgetCollapsed, setWidgetCollapsed] = useState(true);
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  const [highlightedItem, setHighlightedItem] = useState<string | null>(null);
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
+  const [uiLanguage, setUiLanguage] = useState<UILanguage>('ar');
+
+  const orderItemsRef = useRef(orderItems);
+  orderItemsRef.current = orderItems;
+
+  const lastLogoTapRef = useRef(0);
+
+  const t = labels[uiLanguage];
+
+  const updateOrder = useCallback((updater: (prev: OrderItem[]) => OrderItem[]) => {
+    setOrderItems(prev => {
+      const next = updater(prev);
+      if (next.length > prev.length) {
+        setWidgetCollapsed(false);
       }
-    } catch (error) {
-      console.error('Error loading session data:', error);
-    }
-    return { notes: [], appointments: [], calendarEvents: [] };
-  };
-
-  const initialData = loadSessionData();
-  const [notes, setNotes] = useState<Note[]>(initialData.notes);
-  const [appointments, setAppointments] = useState<Appointment[]>(initialData.appointments);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(initialData.calendarEvents);
-  const [thoughts, setThoughts] = useState<ThoughtProcess[]>([]);
-  const [isElectron, setIsElectron] = useState(false);
-
-  const ttsService = useRef<GeminiTTSService | null>(null);
-  const ttsAudioContext = useRef<AudioContext | null>(null);
-  
-  // Initialize TTS service safely
-  useEffect(() => {
-    try {
-      ttsService.current = new GeminiTTSService();
-    } catch (error) {
-      console.error('Failed to initialize TTS service:', error);
-    }
-  }, []);
-  
-  const t = useMemo(() => translations[lang], [lang]);
-
-  useEffect(() => {
-    // Start with panel closed on mobile, open on desktop
-    const isMobile = window.innerWidth < 768;
-    setIsPanelVisible(!isMobile);
+      return next;
+    });
   }, []);
 
-  useEffect(() => {
+  const getOrder = useCallback(() => orderItemsRef.current, []);
+
+  const removeItem = useCallback((itemId: string) => {
+    setOrderItems(prev => prev.filter(o => o.menuItem.id !== itemId));
+  }, []);
+
+  const updateQuantity = useCallback((itemId: string, quantity: number) => {
+    if (quantity <= 0) { removeItem(itemId); return; }
+    setOrderItems(prev => prev.map(o => o.menuItem.id === itemId ? { ...o, quantity } : o));
+  }, [removeItem]);
+
+  const clearOrder = useCallback(() => { setOrderItems([]); setOrderConfirmed(false); }, []);
+
+  const confirmOrder = useCallback(() => { setOrderConfirmed(true); setOrderItems([]); setWidgetCollapsed(true); setTimeout(() => setOrderConfirmed(false), 5000); }, []);
+
+  const handleLanguageChange = useCallback((lang: UILanguage) => {
+    setUiLanguage(lang);
+    document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  }, [lang]);
-
-  const isPanelVisibleRef = useRef(isPanelVisible);
-  useEffect(() => {
-    isPanelVisibleRef.current = isPanelVisible;
-  }, [isPanelVisible]);
-
-  const onNoteSaved = useCallback(() => {
-    if (!isPanelVisibleRef.current) {
-      setNewItemsCount(prev => ({ ...prev, notes: prev.notes + 1 }));
-    }
   }, []);
-
-  const onAppointmentSaved = useCallback(() => {
-    if (!isPanelVisibleRef.current) {
-      setNewItemsCount(prev => ({ ...prev, appointments: prev.appointments + 1 }));
-    }
-  }, []);
-
-  const onEventSaved = useCallback(() => {
-    if (!isPanelVisibleRef.current) {
-      setNewItemsCount(prev => ({ ...prev, calendarEvents: prev.calendarEvents + 1 }));
-    }
-  }, []);
-
-  // Save data to sessionStorage whenever it changes
-  useEffect(() => {
-    try {
-      const dataToSave = {
-        notes,
-        appointments,
-        calendarEvents
-      };
-      sessionStorage.setItem('side_panel_data', JSON.stringify(dataToSave));
-    } catch (error) {
-      console.error('Error saving session data:', error);
-    }
-  }, [notes, appointments, calendarEvents]);
 
   const toolController = useMemo(() => {
     const controller = new ToolController();
-    
-    // Notes CRUD - updated to use terminal commands
-    controller.register(new SaveNoteTool(onNoteSaved));
-    controller.register(new GetNotesTool());
-    controller.register(new UpdateNoteTool());
-    controller.register(new DeleteNoteTool());
-    
-    // Appointments CRUD - updated to use terminal commands
-    controller.register(new SaveAppointmentTool(onAppointmentSaved));
-    controller.register(new GetAppointmentsTool());
-    controller.register(new UpdateAppointmentTool());
-    controller.register(new DeleteAppointmentTool());
-    
-    // Calendar Events CRUD - updated to use terminal commands
-    controller.register(new SaveCalendarEventTool(onEventSaved));
-    controller.register(new GetCalendarEventsTool());
-    controller.register(new UpdateCalendarEventTool());
-    controller.register(new DeleteCalendarEventTool());
-    
-    // Register core tools - instantiate properly
-    controller.register(new ScreenshotTool());
-    controller.register(new ServerManagementTool());
+    controller.register(new AddToOrderTool(updateOrder));
+    controller.register(new RemoveFromOrderTool(updateOrder));
+    controller.register(new UpdateOrderItemTool(updateOrder));
+    controller.register(new ClearOrderTool(updateOrder));
+    controller.register(new GetOrderSummaryTool(getOrder));
+    controller.register(new ListMenuTool());
+    controller.register(new PlaceOrderTool(confirmOrder, getOrder));
+    controller.register(new CancelOrderTool(clearOrder, getOrder));
     controller.register(new EndSessionTool());
-    controller.register(new SetLanguagePreferenceTool());
-    controller.register(new ElectronTerminalTool());
-    controller.register(new SystemStatusTool());
-    controller.register(new ProductivityTools());
-    controller.register(new PythonExcelTool());
-    controller.register(new MouseControlTool());
-    controller.register(new KeyboardControlTool());
-
+    controller.register(new SetLanguageTool(handleLanguageChange));
     return controller;
-  }, [onNoteSaved, onAppointmentSaved, onEventSaved]);
+  }, [updateOrder, getOrder, confirmOrder, clearOrder, handleLanguageChange]);
 
-  // Check system status on app startup
-  useEffect(() => {
-    const checkSystemOnStartup = async () => {
-      try {
-        const systemStatus = new (await import('./tools/systemStatusTool')).SystemStatusTool();
-        const status = await systemStatus.execute({ check: 'puppeteer' });
-        
-        // If Puppeteer is not available, automatically try to install it
-        if (status.includes('Not installed')) {
-          console.log('🔧 Puppeteer not available - attempting automatic installation...');
-          const installResult = await systemStatus.execute({ check: 'install-puppeteer' });
-          console.log('📦 Puppeteer installation result:', installResult);
-        } else {
-          console.log('✅ Puppeteer is already available');
-        }
-      } catch (error) {
-        console.log('System check completed');
-      }
-    };
+  const addThought = useCallback(() => {}, []);
 
-    checkSystemOnStartup();
-  }, []);
+  const geminiLive = useGeminiLive(toolController, addThought);
 
-  const addThought = useCallback((type: ThoughtProcess['type'], content: string, step?: number, totalSteps?: number) => {
-    const newThought: ThoughtProcess = {
-      id: crypto.randomUUID(),
-      timestamp: new Date(),
-      type,
-      content,
-      step,
-      totalSteps
-    };
-    
-    setThoughts(prev => [...prev.slice(-9), newThought]); // Keep only last 10 thoughts
-  }, []);
+  const {
+    orbState,
+    transcripts,
+    currentUserTranscript,
+    currentAiTranscript,
+    connect,
+    disconnect,
+    sendText,
+    activeToolUsage,
+    clearConversationHistory,
+  } = geminiLive;
 
-  const clearThoughts = useCallback(() => {
-    setThoughts([]);
-  }, []);
-
-  const handleCancelTask = useCallback((taskId: string) => {
-    // Background AI functionality removed
-  }, []);
-
-  const { orbState, transcripts, currentUserTranscript, currentAiTranscript, connect, disconnect, sendText, activeToolUsage, updatePersonality } = useGeminiLive(toolController, addThought);
-
-  // Handle personality change
-  const handlePersonalityChange = (personalityId: string) => {
-    setCurrentPersonality(personalityId);
-    personalityService.setPersonality(personalityId);
-    
-    // Log personality change (no popup)
-    const personality = personalityService.getAllPersonalities().find(p => p.id === personalityId);
-    if (personality) {
-      console.log(`🎭 Personality changed to ${personality.name} - will take effect on next conversation`);
-    }
-  };
-
-  const isDataAvailable = useMemo(() => notes.length > 0 || appointments.length > 0 || calendarEvents.length > 0, [notes, appointments, calendarEvents]);
-  
-  const isReadyForTextInput = useMemo(() => 
-    orbState === 'listening' || 
-    orbState === 'idle' || 
-    orbState === 'processing' || 
-    orbState === 'speaking' ||
-    orbState === 'connecting',
+  const isReadyForTextInput = useMemo(() =>
+    orbState === 'listening' || orbState === 'idle' || orbState === 'processing' || orbState === 'speaking' || orbState === 'connecting',
     [orbState]
   );
 
-  const handleTogglePanel = () => {
-    setIsPanelVisible(!isPanelVisible);
-    if (!isPanelVisible) {
-      setNewItemsCount({ notes: 0, appointments: 0, calendarEvents: 0 });
-    }
-  };
-  
-  const handleDownloadPdf = () => {
-    generatePdf({ notes, appointments, calendarEvents, lang });
-  };
+  const total = useMemo(() => calculateOrderTotal(orderItems), [orderItems]);
+  const itemCount = useMemo(() => orderItems.reduce((s, i) => s + i.quantity, 0), [orderItems]);
 
-  const handleLanguageToggle = () => {
-    setLang(lang === 'en' ? 'ar' : 'en');
-    alert(`Language changed to ${lang === 'en' ? 'ar' : 'en'}`);
-  };
-  
+  const matchingItem = useMemo(() => {
+    if (!currentAiTranscript) return null;
+    const text = currentAiTranscript.toLowerCase().trim();
+
+    const similarity = (a: string, b: string): number => {
+      if (a === b) return 1;
+      if (a.length === 0 || b.length === 0) return 0;
+      const longer = a.length > b.length ? a : b;
+      const shorter = a.length > b.length ? b : a;
+      if (longer.includes(shorter)) return shorter.length / longer.length;
+      let matches = 0;
+      for (const ch of shorter) {
+        if (longer.includes(ch)) matches++;
+      }
+      return matches / longer.length;
+    };
+
+    let bestId: string | null = null;
+    let bestScore = 0;
+
+    for (const cat of menuCategories) {
+      for (const item of cat.items) {
+        const name = item.name.toLowerCase();
+        const nameAr = item.nameAr;
+        if (text.includes(name) || text.includes(nameAr)) return item.id;
+        const words = text.split(/\s+/);
+        for (const word of words) {
+          const score = Math.max(similarity(word, name), similarity(word, nameAr));
+          if (score > bestScore) {
+            bestScore = score;
+            bestId = item.id;
+          }
+        }
+      }
+    }
+
+    return bestScore >= 0.7 ? bestId : null;
+  }, [currentAiTranscript]);
+
+  const orderedItemIds = useMemo(() => orderItems.map(o => o.menuItem.id), [orderItems]);
+
   const handleConnect = () => {
-    if (orbState === 'disconnected' || orbState === 'idle') {
-      soundEffects.playActivate();
+    if (orbState === 'disconnected') {
       connect();
-    } else {
-      soundEffects.playDeactivate();
+    } else if (orbState === 'idle' || orbState === 'listening' || orbState === 'speaking' || orbState === 'processing') {
       disconnect();
     }
   };
-  
-  const handleDisconnect = () => {
-    soundEffects.playDeactivate();
-    disconnect();
-  };
-  
-  const handleTextSubmit = async (text: string) => {
-    // Add user input as a thought
-    addThought('observing', `User: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
-    
-    if (sendText) {
-      sendText(text);
-    }
+
+  const handleTextSubmit = (text: string) => {
+    if (sendText) sendText(text);
   };
 
-  useEffect(() => {
-    return () => {
-      ttsAudioContext.current?.close();
-    };
+  const addItem = useCallback((item: MenuItem, quantity: number = 1) => {
+    setOrderItems(prev => {
+      const existing = prev.find(o => o.menuItem.id === item.id);
+      if (existing) {
+        return prev.map(o => o.menuItem.id === item.id ? { ...o, quantity: o.quantity + quantity } : o);
+      }
+      return [...prev, { menuItem: item, quantity }];
+    });
+    setWidgetCollapsed(false);
+    setHighlightedItem(item.id);
+    setTimeout(() => setHighlightedItem(null), 2000);
   }, []);
 
-  // Trigger TTS when AI finishes speaking
-  useEffect(() => {
-    // Enable TTS for all AI responses including Gemini Live
-    
-    if (isTtsEnabled && ttsService.current && currentAiTranscript && orbState === 'idle') {
-      const speakAiResponse = async () => {
-        try {
-          const voiceName = personalityService.getVoiceName();
-          console.log(`🎤 AI speaking with voice: ${voiceName} for personality: ${currentPersonality}`);
-          console.log(`🎤 AI text: "${currentAiTranscript.substring(0, 50)}..."`);
-          
-          const base64Audio = await ttsService.current.synthesize(currentAiTranscript, voiceName);
-          if (base64Audio) {
-            if (!ttsAudioContext.current) {
-              ttsAudioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            }
-            const audioBuffer = await decodeAudioData(decode(base64Audio), ttsAudioContext.current, 24000, 1);
-            const source = ttsAudioContext.current.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(ttsAudioContext.current.destination);
-            source.start();
-          }
-        } catch (error) {
-          console.error("AI TTS failed", error);
-          if (error instanceof Error && error.message.includes("API key not valid")) {
-            alert("AI TTS failed: API key is not valid. Please check your API key.");
-          }
-        }
-      };
+  const dir = uiLanguage === 'ar' ? 'rtl' : 'ltr';
 
-      // Small delay to ensure the AI response is fully processed
-      const timeoutId = setTimeout(speakAiResponse, 500);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [currentAiTranscript, orbState, isTtsEnabled, currentPersonality]);
-
-  if (showLandingPage) {
+  if (orderConfirmed) {
     return (
-      <div className="bg-black text-gray-100 font-sans antialiased flex-1 w-full">
-        <div className="flex flex-col items-center justify-center h-full p-8">
-          <LandingPage onBegin={() => setShowLandingPage(false)} />
+      <div className="w-full h-screen bg-gray-950 flex flex-col items-center justify-center px-4" dir={dir}>
+        <div className="text-6xl mb-6 animate-bounce-in">
+          <svg className="w-16 h-16 text-emerald-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
         </div>
+        <h1 className="text-3xl font-bold text-white mb-2">{t.orderConfirmed}</h1>
+        <p className="text-gray-400 mb-6">{t.thankYou}</p>
+        <div className="bg-gray-900 rounded-2xl p-6 max-w-md w-full border border-gray-800 text-right">
+          <h2 className="text-lg font-semibold text-white mb-3">{t.orderSummary}</h2>
+          {orderItems.map(item => (
+            <div key={item.menuItem.id} className="flex justify-between py-1">
+              <span className="text-white font-medium">{formatPrice(item.menuItem.price * item.quantity, uiLanguage)}</span>
+              <span className="text-gray-300">{uiLanguage === 'ar' ? item.menuItem.nameAr : item.menuItem.name} x{item.quantity}</span>
+            </div>
+          ))}
+          <div className="border-t border-gray-700 mt-3 pt-3 flex justify-between">
+            <span className="font-bold text-white">{formatPrice(total, uiLanguage)}</span>
+            <span className="font-bold text-white">{t.total}</span>
+          </div>
+        </div>
+        <button onClick={clearOrder} className="mt-6 px-8 py-3 bg-white hover:bg-gray-200 text-gray-900 rounded-xl font-semibold transition-colors">
+          {t.newOrder}
+        </button>
       </div>
     );
   }
 
-
   return (
-    <div className="bg-black text-gray-100 font-sans antialiased flex-1 w-full grid grid-rows-1 overflow-hidden">
-      {/* AI Personality Settings - Fixed Top Left */}
-      <AIPersonalitySettings
-        currentPersonality={currentPersonality}
-        onPersonalityChange={handlePersonalityChange}
-      />
-      
-      {/* Auto-Update Manager */}
-      <AutoUpdateManager />
-        
-      {/* Background Layer */}
-      <div className="col-start-1 row-start-1 z-0 w-full h-full min-h-0">
-        <BackgroundSciFi />
+    <div className="w-full h-screen bg-gray-950 flex flex-col overflow-hidden" dir={dir}>
+      <div className="shrink-0 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800 px-4 md:px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {itemCount > 0 && (
+            <div className="bg-emerald-500/20 text-emerald-400 text-sm font-bold rounded-full px-3 py-1 border border-emerald-500/30">
+              {formatPrice(total, uiLanguage)} · {itemCount}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <h1
+            className="text-xl md:text-2xl font-bold text-white tracking-tight cursor-pointer select-none"
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastLogoTapRef.current < 400) {
+                navigate('/admin/login');
+              }
+              lastLogoTapRef.current = now;
+            }}
+          >
+            Quick Bites
+          </h1>
+          <button
+            onClick={() => handleLanguageChange(uiLanguage === 'ar' ? 'en' : 'ar')}
+            className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-sm font-bold text-gray-300 hover:text-white transition-all active:scale-95"
+          >
+            {uiLanguage === 'ar' ? 'EN' : 'عربي'}
+          </button>
+        </div>
       </div>
-      
-      {/* Foreground/Content Layer */}
-      <div className="col-start-1 row-start-1 z-10 w-full h-full min-h-0 bg-black/50 relative md:flex overflow-x-hidden">
-        <main className="flex-1 flex flex-col items-center h-full p-4 min-h-0">
 
-          <div className="relative flex flex-col items-center justify-center mt-6 mb-4 pt-6 shrink-0">
-            <AssistantOrbLiquid
-              state={orbState}
-              onClick={handleConnect}
-              ariaLabel={orbState === 'disconnected' || orbState === 'idle' ? 'Start AI Assistant' : 'Stop AI Conversation'}
-            />
-          </div>
-          
-          <div className="text-center text-yellow-400/80 mb-4 h-6 shrink-0 font-mono">
-            {orbState === 'disconnected' && 'Tap to Start'}
-            {orbState === 'connecting' && 'Connecting...'}
-            {orbState === 'idle' && 'Tap to Stop'}
-            {orbState === 'listening' && 'Listening...'}
-            {orbState === 'processing' && 'Thinking...'}
-            {orbState === 'speaking' && 'Speaking...'}
-          </div>
-          
-          <div className="flex-grow w-full max-w-4xl flex flex-col items-center min-h-0">
-             <TranscriptView
+      {orbState !== 'disconnected' && (
+        <div className="shrink-0 bg-gray-900/50 border-b border-gray-800 px-4 py-2 text-center">
+          <span className="text-sm text-gray-400">
+            {orbState === 'listening' ? t.listening :
+             orbState === 'speaking' ? t.speaking :
+             orbState === 'processing' ? t.processing :
+             orbState === 'connecting' ? t.connecting : ''}
+          </span>
+        </div>
+      )}
+
+      {(currentUserTranscript || currentAiTranscript) && (
+        <div className={`shrink-0 bg-gray-900/50 border-b border-gray-800 px-4 py-3 ${uiLanguage === 'ar' ? 'text-right' : 'text-left'}`}>
+          {currentUserTranscript && (
+            <p className="text-sm text-gray-300">
+              {uiLanguage === 'ar' ? <>{currentUserTranscript}<span className="font-medium text-white"> :{t.you}</span></> : <><span className="font-medium text-white">{t.you}: </span>{currentUserTranscript}</>}
+            </p>
+          )}
+          {currentAiTranscript && (
+            <p className="text-sm text-emerald-400 mt-1">
+              {uiLanguage === 'ar' ? <>{currentAiTranscript}<span className="font-medium text-emerald-300"> :{t.ai}</span></> : <><span className="font-medium text-emerald-300">{t.ai}: </span>{currentAiTranscript}</>}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <FoodMenu highlightedItem={highlightedItem} matchingItem={matchingItem} orderedItemIds={orderedItemIds} onAddItem={addItem} lang={uiLanguage} />
+        </div>
+      </div>
+
+      {isPanelVisible && (
+        <>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => setIsPanelVisible(false)} />
+          <div className="fixed inset-x-4 top-20 bottom-20 md:inset-auto md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-96 md:max-h-[70vh] z-50 bg-gray-900 rounded-2xl shadow-2xl shadow-black/50 border border-gray-800 flex flex-col overflow-hidden animate-fade-in md:left-1/2 md:right-auto" dir={dir}>
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between shrink-0">
+              <span className="text-sm font-semibold text-white">{t.chatTitle}</span>
+              <button onClick={() => setIsPanelVisible(false)} className="text-gray-500 hover:text-white">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden min-h-0">
+              <TranscriptView
                 transcripts={transcripts}
                 currentUserTranscript={currentUserTranscript}
                 currentAiTranscript={currentAiTranscript}
-             />
-          </div>
-
-          <div className="shrink-0 w-full">
-            <TextInput
-              onSubmit={handleTextSubmit}
-              isReady={isReadyForTextInput}
-              isTtsEnabled={isTtsEnabled}
-              onTtsToggle={() => setIsTtsEnabled(!isTtsEnabled)}
-            />
-          </div>
-        </main>
-
-        {/* Mobile Backdrop */}
-        {isPanelVisible && (
-          <div
-            onClick={handleTogglePanel}
-            className="fixed inset-0 bg-black/80 z-20 md:hidden"
-            aria-hidden="true"
-          />
-        )}
-
-        <aside className={`
-          fixed md:relative inset-y-0 right-0 z-30 h-full
-          w-full max-w-sm sm:max-w-md md:w-auto
-          bg-gray-900/90 md:bg-transparent backdrop-blur-md md:backdrop-blur-none
-          border-l border-yellow-500/20 shadow-2xl shadow-yellow-500/10
-          transform transition-all duration-300 ease-in-out
-          md:transform-none md:border-l
-          ${isPanelVisible ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
-        `}>
-          <div className={`h-full transition-all duration-300 ${isPanelVisible ? 'md:w-96' : 'md:w-24'}`}>
-            {isPanelVisible ? (
-              <InformationPanelSciFi
-                notes={notes}
-                appointments={appointments}
-                calendarEvents={calendarEvents}
-                lang={lang}
-                onToggle={handleTogglePanel}
-                onDownloadPdf={handleDownloadPdf}
-                isDataAvailable={isDataAvailable}
-                onLanguageToggle={handleLanguageToggle}
-                activeToolUsage={activeToolUsage}
-                thoughts={thoughts}
-                onClearThoughts={clearThoughts}
+                onClearConversationHistory={clearConversationHistory}
+                lang={uiLanguage}
               />
-            ) : (
-              <div className="hidden md:block h-full">
-                <CollapsedPanel
-                  newItemsCount={newItemsCount}
-                  onExpand={handleTogglePanel}
-                />
-              </div>
+            </div>
+            <div className="p-3 border-t border-gray-800 shrink-0">
+              <TextInput onSubmit={handleTextSubmit} isReady={isReadyForTextInput} isTtsEnabled={true} onTtsToggle={() => {}} placeholder={t.searchPlaceholder} />
+            </div>
+          </div>
+        </>
+      )}
+
+      <OrderWidget
+        items={orderItems}
+        onUpdateQuantity={updateQuantity}
+        onRemoveItem={removeItem}
+        onClearOrder={clearOrder}
+        onConfirmOrder={confirmOrder}
+        isCollapsed={widgetCollapsed}
+        onToggle={() => setWidgetCollapsed(!widgetCollapsed)}
+        lang={uiLanguage}
+      />
+
+      <div className="fixed bottom-0 inset-x-0 z-50 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 px-6 py-3 flex items-center justify-around" dir={dir}>
+        <button
+          onClick={() => setWidgetCollapsed(!widgetCollapsed)}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${!widgetCollapsed ? 'text-emerald-400' : 'text-gray-500 hover:text-white'}`}
+        >
+          <div className="relative">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" /></svg>
+            {itemCount > 0 && (
+              <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {itemCount}
+              </span>
             )}
           </div>
-        </aside>
+          <span className="text-[10px] font-medium">{uiLanguage === 'ar' ? 'السلة' : 'Cart'}</span>
+        </button>
 
-        {!isPanelVisible && (
-          <button
-              onClick={() => {
-                soundEffects.playClick();
-                handleTogglePanel();
-              }}
-              className="fixed top-4 right-4 p-1.5 text-yellow-400 hover:text-yellow-300 rounded-full bg-gray-900/90 hover:bg-yellow-500/20 border border-yellow-500/30 focus:outline-none focus:ring-2 focus:ring-yellow-400 md:hidden z-40 transition-all duration-200"
-              aria-label="Expand panel"
-          >
-              <PanelToggleIcon className="w-6 h-6" isPanelVisible={false} />
-          </button>
-        )}
-
-        {/* Version Display - Bottom Left */}
-        <div className="fixed bottom-4 left-4 z-20">
-          <div className="bg-gray-900/90 backdrop-blur-md border border-yellow-500/20 rounded-lg px-3 py-1.5 text-xs font-mono text-yellow-400/70 hover:text-yellow-400 transition-colors duration-200">
-            v1.8.2
+        <button
+          onClick={handleConnect}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${
+            orbState === 'listening' ? 'text-emerald-400' :
+            orbState === 'speaking' ? 'text-blue-400' :
+            orbState === 'processing' ? 'text-amber-400' :
+            'text-gray-500 hover:text-white'
+          }`}
+        >
+          <div className={`w-14 h-14 -mt-8 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+            orbState === 'listening'
+              ? 'bg-emerald-500 shadow-emerald-500/50 animate-pulse-ring'
+              : orbState === 'speaking'
+                ? 'bg-blue-500 shadow-blue-500/50'
+                : orbState === 'processing'
+                  ? 'bg-amber-500 shadow-amber-500/50'
+                  : orbState === 'connecting'
+                    ? 'bg-amber-400 animate-pulse'
+                    : 'bg-gray-700 hover:bg-gray-600 border-2 border-gray-500'
+          }`}>
+            {orbState === 'listening' ? (
+              <div className="flex items-center gap-0.5">
+                <span className="w-0.5 bg-white rounded-full animate-sound-bar-1" style={{ height: '18px' }} />
+                <span className="w-0.5 bg-white rounded-full animate-sound-bar-2" style={{ height: '24px' }} />
+                <span className="w-0.5 bg-white rounded-full animate-sound-bar-3" style={{ height: '12px' }} />
+                <span className="w-0.5 bg-white rounded-full animate-sound-bar-4" style={{ height: '20px' }} />
+                <span className="w-0.5 bg-white rounded-full animate-sound-bar-5" style={{ height: '16px' }} />
+              </div>
+            ) : orbState === 'speaking' ? (
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            ) : orbState === 'processing' ? (
+              <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            )}
           </div>
-        </div>
+          <span className="text-[10px] font-medium mt-1">
+            {orbState === 'listening' ? t.talk :
+             orbState === 'speaking' ? t.speaking :
+             orbState === 'processing' ? t.processing :
+             orbState === 'connecting' ? t.connecting :
+             t.voice}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setIsPanelVisible(!isPanelVisible)}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${isPanelVisible ? 'text-emerald-400' : 'text-gray-500 hover:text-white'}`}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+          <span className="text-[10px] font-medium">{t.chat}</span>
+        </button>
       </div>
     </div>
+  );
+}
+
+const Loading = () => (
+  <div className="w-full h-screen bg-gray-950 flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/" element={<CustomerApp />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<MenuManager />} />
+            <Route path="menu" element={<MenuManager />} />
+            <Route path="ai-script" element={<AIScriptEditor />} />
+            <Route path="conversations" element={<ConversationLog />} />
+            <Route path="qr" element={<QRGenerator />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   );
 }
 
